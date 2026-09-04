@@ -197,7 +197,26 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-[#0282EB]">
+    <div className="min-h-screen flex flex-col text-slate-900 font-sans selection:bg-blue-100 selection:text-[#0282EB]">
+      {/* Tech background overlay (brand blue) */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-40">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(2,130,235,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(2,130,235,0.045) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+            maskImage:
+              "radial-gradient(ellipse 120% 90% at 50% 0%, black 35%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 120% 90% at 50% 0%, black 35%, transparent 100%)",
+          }}
+        />
+        <div className="absolute -top-48 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-[#0282EB]/10 blur-[130px]" />
+        <div className="absolute top-[38%] -right-56 h-[520px] w-[520px] rounded-full bg-[#00C6D7]/8 blur-[130px]" />
+        <div className="absolute -bottom-56 -left-40 h-[520px] w-[520px] rounded-full bg-[#0282EB]/8 blur-[130px]" />
+      </div>
+
       <Navbar />
       <main className="flex-1 w-full relative">
         <ReadingProgressBar />
