@@ -114,7 +114,7 @@ export const HowItWorksPage: React.FC = () => {
     <div className="w-full bg-white selection:bg-blue-100 selection:text-[#0282EB]">
       {/* 1. Page Header Hero */}
       <section className="py-20 lg:py-28 bg-[#F8FAFC] border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -151,7 +151,7 @@ export const HowItWorksPage: React.FC = () => {
 
       {/* 2. Interactive 4-Phase Deployment Journey */}
       <section className="py-20 lg:py-28 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -296,7 +296,7 @@ export const HowItWorksPage: React.FC = () => {
 
       {/* 3. The 3 Architectural Pillars */}
       <section className="py-20 lg:py-28 bg-[#070D1E] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -404,7 +404,7 @@ export const HowItWorksPage: React.FC = () => {
 
       {/* 5. Bottom CTA Banner */}
       <section className="py-20 lg:py-28 bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}

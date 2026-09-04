@@ -32,7 +32,7 @@ export const StatsSection: React.FC = () => {
     >
       <div className="pointer-events-none absolute -left-24 -top-32 h-80 w-80 rounded-full bg-[#0282EB]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-[#00C6D7]/15 blur-3xl" />
-      <div className="relative mx-auto max-w-7xl px-5 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">
+      <div className="relative mx-auto max-w-[1440px] px-5 py-8 sm:px-10 sm:py-10 lg:px-12 lg:py-12">
         {/* Ambient glows and grid texture keep the panel dimensional without adding noise. */}
 
         <div

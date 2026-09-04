@@ -51,7 +51,7 @@ export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Breadcrumb & Navigation */}
       <div className="bg-white border-b border-slate-200 py-3.5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
           <Link href="/services" className="hover:text-[#0282EB] flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Services
           </Link>
@@ -62,7 +62,7 @@ export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
 
       {/* ================= HERO ================= */}
       <section className="bg-white border-b border-slate-200 py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-8 space-y-6">
               <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0282EB] flex items-center justify-center shadow-xs">
@@ -112,7 +112,7 @@ export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
       </section>
 
       {/* ================= OVERVIEW / PROBLEM & APPROACH ================= */}
-      <section id="architecture-overview" className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="architecture-overview" className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Main content */}
           <div className="lg:col-span-8 space-y-12">

@@ -104,8 +104,8 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
   const spx = useSpring(px, { stiffness: 60, damping: 18 });
   const spy = useSpring(py, { stiffness: 60, damping: 18 });
 
-  const sphereRotateY = useTransform(spx, [0, 1], [-8, 8]);
-  const sphereRotateX = useTransform(spy, [0, 1], [6, -6]);
+  const sphereRotateY = useTransform(spx, [0, 1], [-40, 40]);
+  const sphereRotateX = useTransform(spy, [0, 1], [15, -15]);
   const glowX = useTransform(spx, (v) => `${v * 100}%`);
   const glowY = useTransform(spy, (v) => `${v * 100}%`);
 
@@ -148,7 +148,7 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
         <div
           ref={cardRef}
           onMouseMove={handlePointerMove}
-          className="rounded-3xl lg:rounded-[32px] bg-white border border-slate-200/90  overflow-hidden relative"
+          className="  overflow-hidden relative"
         >
           {/* Faint dot-grid texture across the whole card, for depth without noise */}
           <div
@@ -243,7 +243,7 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                   className="inline-flex items-center gap-3.5 pl-6 pr-2 py-2 rounded-full bg-[#2469E5] hover:bg-[#1b58ca] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg shadow-blue-500/25 transition-colors cursor-pointer"
                   style={{ fontFamily: "'Orbitron', sans-serif" }}
                 >
-                  <span>GET IN TOUCH</span>
+                  <span>Book a Demo</span>
                   <span className="w-8 h-8 rounded-lg bg-[#1B1F27] text-white flex items-center justify-center shadow-xs">
                     <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
                   </span>
@@ -298,26 +298,7 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                 </span>
               </div>
 
-              <div className="relative z-10 p-4 rounded-2xl bg-white/[0.05] border border-white/10 backdrop-blur-md space-y-2 mt-auto">
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
-                  <span>SYSTEM_ACCURACY</span>
-                  <span className="text-white font-bold tabular-nums">
-                    {accuracy}% Deterministic
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
-                  <span>RESPONSE_LATENCY</span>
-                  <span className="text-[#38BDF8] font-bold tabular-nums">
-                    &lt; {latency}ms
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-300">
-                  <span>KNOWLEDGE_BASE</span>
-                  <span className="text-emerald-400 font-bold">
-                    Ground Truth Verified
-                  </span>
-                </div>
-              </div>
+             
             </div>
 
             {/* ========================================================
@@ -336,7 +317,7 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                     rotateY: sphereRotateY,
                     transformStyle: "preserve-3d",
                   }}
-                  animate={{ y: [-8, 8, -8] }}
+                  
                   transition={{
                     duration: 6,
                     repeat: Infinity,
@@ -417,61 +398,9 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                   </svg>
                 </motion.div>
 
-                <motion.div
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{
-                    duration: 4.5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.3,
-                  }}
-                  whileHover={{ scale: 1.04 }}
-                  className="absolute top-6 right-2 sm:right-6 bg-slate-900/80 backdrop-blur-md rounded-2xl p-3 border border-white/20 shadow-2xl text-white pointer-events-auto max-w-[170px]"
-                >
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                    <span>SOLUTION_METRICS</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-                  </div>
-                  <svg
-                    viewBox="0 0 100 30"
-                    className="w-full h-8 stroke-cyan-400 fill-none"
-                    strokeWidth="2"
-                  >
-                    <motion.path
-                      d="M0,20 Q25,5 50,18 T100,8"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 1.6, ease: "easeInOut" }}
-                    />
-                  </svg>
-                  <div className="text-[11px] font-bold text-white mt-1">
-                    Autonomous Flow
-                  </div>
-                </motion.div>
+              
 
-                <motion.div
-                  animate={{ y: [0, 6, 0] }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.8,
-                  }}
-                  whileHover={{ scale: 1.04 }}
-                  className="absolute bottom-10 right-4 sm:right-10 bg-slate-950/85 backdrop-blur-md rounded-2xl p-3.5 border border-slate-700/70 shadow-2xl text-white pointer-events-auto space-y-1 text-left"
-                >
-                  <div className="text-[10px] font-mono text-[#38BDF8] uppercase tracking-wider">
-                    SOLUTION_PIPELINE
-                  </div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Active Build</span>
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    Zero manual handoffs
-                  </div>
-                </motion.div>
-
+           
                 <motion.div
                   animate={{ y: [-4, 4, -4], x: [2, -2, 2] }}
                   transition={{

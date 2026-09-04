@@ -98,15 +98,6 @@ const AppContent: React.FC = () => {
     return (
       <div className="relative min-h-screen">
         <TargoPage />
-        {/* Floating Switcher Pill to Return to Beezent Agency Portal */}
-        <div className="fixed bottom-4 right-4 z-50">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-sans font-medium shadow-lg backdrop-blur-xs transition-all hover:scale-105 border border-slate-700 cursor-pointer"
-          >
-            <span>🐝 View Beezent Agency Portal</span>
-          </Link>
-        </div>
       </div>
     );
   }
@@ -223,17 +214,6 @@ const AppContent: React.FC = () => {
         </AnimatePresence>
       </main>
       <Footer />
-
-      {/* Floating Switcher Pill to View Targo Single-Page Mode */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <Link
-          href="/targo"
-          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111111] hover:bg-black text-white text-xs font-medium shadow-xl border border-slate-700 transition-all hover:scale-105 cursor-pointer"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#15BCDF] animate-pulse" />
-          <span>View Targo Single-Page Experience</span>
-        </Link>
-      </div>
 
       {/* Global Interactive Modals */}
       <BookDemoModal isOpen={isDemoOpen} onClose={closeDemo} />

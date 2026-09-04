@@ -10,7 +10,7 @@ interface BeeRelaxBannerProps {
 export const BeeRelaxBanner: React.FC<BeeRelaxBannerProps> = ({ onOpenDayTimeline }) => {
   return (
     <section id="day-with-bee" className="py-20 lg:py-28 bg-white border-b border-slate-200/90">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Full-width scenic image card with dark overlay and Hero UI geometry */}
         <div className="relative rounded-3xl lg:rounded-[32px] overflow-hidden min-h-[480px] sm:min-h-[540px] flex items-center shadow-2xl border border-slate-800">
           {/* Background image */}

@@ -12,7 +12,7 @@ export const HomePage: React.FC = () => {
   const { openDemo, openDayTimeline } = useModals();
 
   return (
-    <div className="w-full bg-white selection:bg-blue-100 selection:text-[#0282EB]">
+    <div className="w-full bg-white selection:bg-blue-100 selection:text-[#0282EB] overflow-hidden">
       {/* 1. Editorial Hero Section with 3D Mascot & Platform */}
       <BeeHero onOpenDemoModal={openDemo} onOpenDayTimeline={openDayTimeline} />
 

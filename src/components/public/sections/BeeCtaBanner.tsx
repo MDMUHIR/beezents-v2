@@ -9,7 +9,7 @@ interface BeeCtaBannerProps {
 export const BeeCtaBanner: React.FC<BeeCtaBannerProps> = ({ onOpenDemoModal }) => {
   return (
     <section id="book-demo" className="py-20 lg:py-28 bg-[#EDF0F4]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}

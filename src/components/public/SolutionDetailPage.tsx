@@ -41,7 +41,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200 py-3.5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
           <Link href="/solutions" className="hover:text-[#0282EB] flex items-center gap-1">
             <ArrowLeft className="w-3.5 h-3.5" /> Solutions
           </Link>
@@ -52,7 +52,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
 
       {/* Hero */}
       <section className="bg-white border-b border-slate-200 py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-8 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-[#0282EB]">
@@ -95,7 +95,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
       </section>
 
       {/* Main Content Area */}
-      <section className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           <div className="lg:col-span-8 space-y-12">
             {/* Overview */}

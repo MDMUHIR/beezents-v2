@@ -40,7 +40,7 @@ export const AboutPage: React.FC = () => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Hero */}
       <section className="bg-white border-b border-slate-200 py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-[#0282EB] mb-4">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -57,7 +57,7 @@ export const AboutPage: React.FC = () => {
       </section>
 
       {/* Mission & Beliefs */}
-      <section className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <div className="text-xs font-bold uppercase tracking-wider text-[#0282EB]">Our Core Mission</div>
@@ -110,7 +110,7 @@ export const AboutPage: React.FC = () => {
 
       {/* Leadership & Engineering Team */}
       <section className="py-16 lg:py-24 bg-white border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <div className="text-xs font-bold uppercase tracking-wider text-[#0282EB] mb-2">Technical Leadership</div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">

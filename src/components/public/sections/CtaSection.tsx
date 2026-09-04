@@ -12,7 +12,7 @@ export const CtaSection: React.FC<CtaSectionProps> = ({ onOpenDemoModal }) => {
 
   return (
     <section className="py-16 sm:py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#0B0F19] to-slate-950 border border-slate-800 p-8 sm:p-12 lg:p-16 overflow-hidden shadow-2xl">
           {/* Subtle Ambient Glows */}
           <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0282EB]/20 rounded-full blur-3xl pointer-events-none" />

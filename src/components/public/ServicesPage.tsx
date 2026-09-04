@@ -20,7 +20,7 @@ export const ServicesPage: React.FC = () => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Header */}
       <section className="bg-white border-b border-slate-200 py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-[#0282EB] mb-4">
               <Zap className="w-3.5 h-3.5" />
@@ -37,7 +37,7 @@ export const ServicesPage: React.FC = () => {
       </section>
 
       {/* Services Grid */}
-      <section className="py-16 lg:py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {services.map(service => (
             <div

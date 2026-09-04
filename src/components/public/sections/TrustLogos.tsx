@@ -85,7 +85,7 @@ export const TrustLogos: React.FC = () => {
       {/* Subtle brand glow */}
       <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-96 -translate-x-1/2 rounded-full bg-[#0282EB]/[0.035] blur-3xl" />
 
-      <div className="relative mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
+      <div className="relative mx-auto max-w-[1440px] px-5 py-8 sm:px-8 sm:py-10 lg:px-10">
         <div className="flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
           {/* Trust statement */}
           <div className="flex shrink-0 items-center gap-3">

@@ -9,7 +9,7 @@ export const Footer: React.FC = () => {
       {/* Subtle radial glow in background */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#0282EB]/15 blur-[140px] pointer-events-none rounded-full" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main 4-Column Grid matching prompt specification */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-14 border-b border-slate-800">

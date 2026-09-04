@@ -85,7 +85,7 @@ export const PricingPage: React.FC = () => {
     <div className="w-full bg-white selection:bg-blue-100 selection:text-[#0282EB]">
       {/* 1. Pricing Hero */}
       <section className="py-20 lg:py-28 bg-[#F8FAFC] border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -144,7 +144,7 @@ export const PricingPage: React.FC = () => {
 
       {/* 2. Three Main Plan Cards */}
       <section className="py-20 lg:py-28 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             {/* Starter Plan */}
             <motion.div
@@ -330,7 +330,7 @@ export const PricingPage: React.FC = () => {
 
       {/* 3. Interactive ROI & Savings Calculator */}
       <section className="py-20 lg:py-28 bg-[#F8FAFC] border-b border-slate-200/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Left Column: Sliders */}
             <div className="lg:col-span-7 space-y-8">
@@ -471,7 +471,7 @@ export const PricingPage: React.FC = () => {
 
       {/* 4. Deep Feature Comparison Table */}
       <section className="py-20 lg:py-28 bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
             <div className="text-xs font-bold uppercase tracking-wider text-[#0282EB] bg-blue-50 inline-block px-3 py-1 rounded-full">
               PLAN MATRIX
@@ -508,7 +508,7 @@ export const PricingPage: React.FC = () => {
 
       {/* 5. Bottom Consultation Banner */}
       <section className="py-20 lg:py-28 bg-[#070D1E] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
           <div className="inline-block px-3.5 py-1 rounded-full bg-[#0282EB]/20 border border-[#0282EB]/30 text-xs font-bold uppercase tracking-wider text-[#38BDF8]">
             HAVE QUESTIONS ABOUT YOUR INFRASTRUCTURE?
           </div>

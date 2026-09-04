@@ -18,7 +18,7 @@ export const Container: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   ...props
 }) => (
   <div
-    className={`mx-auto w-full max-w-[1280px] px-5 sm:px-8 lg:px-10 ${className}`}
+    className={`mx-auto w-full max-w-[1440px] px-5 sm:px-8 lg:px-12 ${className}`}
     {...props}
   >
     {children}
