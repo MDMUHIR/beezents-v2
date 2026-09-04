@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --font-orbitron: 'Orbitron', sans-serif;
+  --font-chakra: 'Chakra Petch', sans-serif;
+  --font-space: 'Space Grotesk', sans-serif;
+  --font-display: 'Space Grotesk', 'Chakra Petch', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}

@@ -1,0 +1,244 @@
+// Prisma schema for The Beezent AI Agency & CMS Platform
+// Datasource: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InquiryStatus {
+  New
+  Contacted
+  InProgress @map("In Progress")
+  Converted
+  Closed
+  Archived
+}
+
+enum ProjectType {
+  AIAgents            @map("AI Agents")
+  AIAutomation        @map("AI Automation")
+  AISolutions         @map("AI Solutions")
+  SoftwareDevelopment @map("Software Development")
+  AIIntegration       @map("AI Integration")
+  Consulting          @map("Consulting")
+  Other               @map("Other")
+}
+
+model AdminUser {
+  id          String     @id @default(cuid())
+  name        String
+  email       String     @unique
+  password    String
+  role        UserRole   @default(ADMIN)
+  status      UserStatus @default(ACTIVE)
+  avatar      String?
+  lastLoginAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  inquiryNotes InquiryNote[]
+
+  @@map("admin_users")
+}
+
+model Service {
+  id               String        @id @default(cuid())
+  title            String
+  slug             String        @unique
+  shortDescription String
+  fullDescription  String        @db.Text
+  icon             String
+  heroVisual       String?
+  features         String[]
+  benefits         String[]
+  technologies     String[]
+  process          Json          // Array of { step, title, description }
+  problemStatement String?       @db.Text
+  ourApproach      String?       @db.Text
+  ctaText          String?
+  seoTitle         String?
+  seoDescription   String?
+  status           ContentStatus @default(PUBLISHED)
+  sortOrder        Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@map("services")
+}
+
+model Solution {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  category        String
+  shortDescription String
+  description     String        @db.Text
+  businessProblem String        @db.Text
+  solution        String        @db.Text
+  features        String[]
+  benefits        String[]
+  workflow        Json          // Array of { step, title, description }
+  integrations    String[]
+  technologies    String[]
+  visual          String?
+  featured        Boolean       @default(false)
+  status          ContentStatus @default(PUBLISHED)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("solutions")
+}
+
+model Project {
+  id               String        @id @default(cuid())
+  title            String
+  slug             String        @unique
+  shortDescription String
+  fullDescription  String        @db.Text
+  projectType      ProjectType
+  industry         String
+  clientName       String?
+  timeline         String?
+  coverImage       String
+  gallery          String[]
+  technologies     String[]
+  servicesUsed     String[]
+  projectUrl       String?
+  liveUrl          String?
+  completionDate   String
+  featured         Boolean       @default(false)
+  status           ContentStatus @default(PUBLISHED)
+  sortOrder        Int           @default(0)
+  overview         String        @db.Text
+  challenge        String        @db.Text
+  solution         String        @db.Text
+  implementation   String        @db.Text
+  results          String[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  caseStudy        CaseStudy?
+
+  @@map("projects")
+}
+
+model CaseStudy {
+  id                      String        @id @default(cuid())
+  title                   String
+  slug                    String        @unique
+  client                  String
+  industry                String
+  summary                 String        @db.Text
+  challenge               String        @db.Text
+  objectives              String[]
+  solution                String        @db.Text
+  architectureDescription String        @db.Text
+  implementation          String        @db.Text
+  workflowSteps           Json          // Array of { title, description }
+  technologies            String[]
+  measurableResults       Json          // Array of { metric, label, context }
+  testimonial             Json          // { quote, author, role, company, avatar }
+  coverImage              String
+  gallery                 String[]
+  featured                Boolean       @default(false)
+  status                  ContentStatus @default(PUBLISHED)
+  publishDate             DateTime      @default(now())
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+
+  projectId               String?       @unique
+  project                 Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@map("case_studies")
+}
+
+model BlogPost {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  excerpt     String        @db.Text
+  content     String        @db.Text
+  coverImage  String
+  author      Json          // { name, role, avatar }
+  category    String
+  tags        String[]
+  featured    Boolean       @default(false)
+  status      ContentStatus @default(PUBLISHED)
+  readTime    String
+  publishDate DateTime      @default(now())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("blog_posts")
+}
+
+model Inquiry {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  company     String?
+  phone       String?
+  projectType String
+  budgetRange String
+  message     String        @db.Text
+  status      InquiryStatus @default(New)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  internalNotes InquiryNote[]
+
+  @@map("inquiries")
+}
+
+model InquiryNote {
+  id        String   @id @default(cuid())
+  inquiryId String
+  inquiry   Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    AdminUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("inquiry_notes")
+}
+
+model MediaItem {
+  id         String   @id @default(cuid())
+  name       String
+  url        String
+  size       String
+  type       String
+  alt        String?
+  uploadedAt DateTime @default(now())
+
+  @@map("media_items")
+}
+
+model SiteSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_settings")
+}

@@ -1,0 +1,259 @@
+import React from 'react';
+import { DatabaseProvider, useDatabase } from './context/DatabaseContext';
+import { RouterProvider, useRouter, Link } from './context/RouterContext';
+import { ModalProvider, useModals } from './context/ModalContext';
+
+// Modals
+import { BookDemoModal } from './components/public/modals/BookDemoModal';
+import { DayWithBeeModal } from './components/public/modals/DayWithBeeModal';
+
+// Public Components
+import { Navbar } from './components/public/Navbar';
+import { Footer } from './components/public/Footer';
+import { HomePage } from './components/public/HomePage';
+import { HowItWorksPage } from './components/public/HowItWorksPage';
+import { PricingPage } from './components/public/PricingPage';
+import { TargoPage } from './components/targo/TargoPage';
+import { ServicesPage } from './components/public/ServicesPage';
+import { ServiceDetailPage } from './components/public/ServiceDetailPage';
+import { SolutionsPage } from './components/public/SolutionsPage';
+import { SolutionDetailPage } from './components/public/SolutionDetailPage';
+import { ProjectsPage } from './components/public/ProjectsPage';
+import { ProjectDetailPage } from './components/public/ProjectDetailPage';
+import { CaseStudiesPage } from './components/public/CaseStudiesPage';
+import { CaseStudyDetailPage } from './components/public/CaseStudyDetailPage';
+import { AboutPage } from './components/public/AboutPage';
+import { ContactPage } from './components/public/ContactPage';
+import { BlogPage } from './components/public/BlogPage';
+import { BlogPostPage } from './components/public/BlogPostPage';
+import { ReadingProgressBar } from './components/shared/ReadingProgressBar';
+import { motion, AnimatePresence } from 'motion/react';
+
+// Admin Components
+import { AdminLayout } from './components/admin/AdminLayout';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminProjects } from './components/admin/AdminProjects';
+import { AdminCaseStudies } from './components/admin/AdminCaseStudies';
+import { AdminServices } from './components/admin/AdminServices';
+import { AdminSolutions } from './components/admin/AdminSolutions';
+import { AdminBlog } from './components/admin/AdminBlog';
+import { AdminInquiries } from './components/admin/AdminInquiries';
+import { AdminMedia } from './components/admin/AdminMedia';
+import { AdminUsers } from './components/admin/AdminUsers';
+import { AdminSettings } from './components/admin/AdminSettings';
+
+const AppContent: React.FC = () => {
+  const { path } = useRouter();
+  const { auth } = useDatabase();
+  const { isDemoOpen, isDayTimelineOpen, closeDemo, closeDayTimeline, openDemo } = useModals();
+
+  // Scroll to top on route change
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [path]);
+
+  // ================= ADMIN ROUTING =================
+  if (path === '/admin/login') {
+    return <AdminLogin />;
+  }
+
+  if (path.startsWith('/admin')) {
+    // Auth Guard
+    if (!auth.isAuthenticated) {
+      return <AdminLogin />;
+    }
+
+    let adminChild: React.ReactNode = <AdminDashboard />;
+
+    if (path === '/admin' || path === '/admin/') {
+      adminChild = <AdminDashboard />;
+    } else if (path.startsWith('/admin/projects')) {
+      adminChild = <AdminProjects />;
+    } else if (path.startsWith('/admin/case-studies')) {
+      adminChild = <AdminCaseStudies />;
+    } else if (path.startsWith('/admin/services')) {
+      adminChild = <AdminServices />;
+    } else if (path.startsWith('/admin/solutions')) {
+      adminChild = <AdminSolutions />;
+    } else if (path.startsWith('/admin/blog')) {
+      adminChild = <AdminBlog />;
+    } else if (path.startsWith('/admin/inquiries')) {
+      adminChild = <AdminInquiries />;
+    } else if (path.startsWith('/admin/media')) {
+      adminChild = <AdminMedia />;
+    } else if (path.startsWith('/admin/users')) {
+      adminChild = <AdminUsers />;
+    } else if (path.startsWith('/admin/settings')) {
+      adminChild = <AdminSettings />;
+    } else {
+      adminChild = <AdminDashboard />;
+    }
+
+    return <AdminLayout>{adminChild}</AdminLayout>;
+  }
+
+  // ================= TARGO SINGLE-PAGE MODE =================
+  if (path === '/targo' || path === '/targo/') {
+    return (
+      <div className="relative min-h-screen">
+        <TargoPage />
+        {/* Floating Switcher Pill to Return to Beezent Agency Portal */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-900 text-white text-xs font-sans font-medium shadow-lg backdrop-blur-xs transition-all hover:scale-105 border border-slate-700 cursor-pointer"
+          >
+            <span>🐝 View Beezent Agency Portal</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= PUBLIC ROUTING =================
+  const renderPublicContent = () => {
+    // Exact match home
+    if (path === '/' || path === '') {
+      return <HomePage />;
+    }
+
+    // Dedicated How It Works Page
+    if (path === '/how-it-works' || path === '/how-it-works/') {
+      return <HowItWorksPage />;
+    }
+
+    // Dedicated Pricing Page
+    if (path === '/pricing' || path === '/pricing/') {
+      return <PricingPage />;
+    }
+
+    // Services
+    if (path === '/services' || path === '/services/') {
+      return <ServicesPage />;
+    }
+    if (path.startsWith('/services/')) {
+      const slug = path.replace('/services/', '').split('/')[0];
+      return <ServiceDetailPage slug={slug} />;
+    }
+
+    // Solutions
+    if (path === '/solutions' || path === '/solutions/') {
+      return <SolutionsPage />;
+    }
+    if (path.startsWith('/solutions/')) {
+      const slug = path.replace('/solutions/', '').split('/')[0];
+      return <SolutionDetailPage slug={slug} />;
+    }
+
+    // Projects
+    if (path === '/projects' || path === '/projects/') {
+      return <ProjectsPage />;
+    }
+    if (path.startsWith('/projects/')) {
+      const slug = path.replace('/projects/', '').split('/')[0];
+      return <ProjectDetailPage slug={slug} />;
+    }
+
+    // Case Studies
+    if (path === '/case-studies' || path === '/case-studies/') {
+      return <CaseStudiesPage />;
+    }
+    if (path.startsWith('/case-studies/')) {
+      const slug = path.replace('/case-studies/', '').split('/')[0];
+      return <CaseStudyDetailPage slug={slug} />;
+    }
+
+    // About
+    if (path === '/about' || path === '/about/') {
+      return <AboutPage />;
+    }
+
+    // Contact
+    if (path === '/contact' || path === '/contact/') {
+      return <ContactPage />;
+    }
+
+    // Blog
+    if (path === '/blog' || path === '/blog/') {
+      return <BlogPage />;
+    }
+    if (path.startsWith('/blog/')) {
+      const slug = path.replace('/blog/', '').split('/')[0];
+      return <BlogPostPage slug={slug} />;
+    }
+
+    // 404 Fallback
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-24 bg-white">
+        <span className="text-xs font-bold uppercase tracking-widest text-[#0282EB] bg-blue-50 px-3 py-1 rounded-full mb-3">
+          404 Not Found
+        </span>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+          Page Not Located
+        </h1>
+        <p className="text-slate-500 text-sm max-w-md mt-2">
+          The requested system endpoint or document does not exist or has been relocated.
+        </p>
+        <Link
+          href="/"
+          className="mt-6 px-6 py-2.5 bg-[#0282EB] text-white text-xs font-semibold rounded-xl hover:bg-[#1d58c4] transition-colors"
+        >
+          Return to Overview
+        </Link>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-white text-slate-900 font-sans selection:bg-blue-100 selection:text-[#0282EB]">
+      <Navbar />
+      <main className="flex-1 w-full relative">
+        <ReadingProgressBar />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={path}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
+            {renderPublicContent()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+      <Footer />
+
+      {/* Floating Switcher Pill to View Targo Single-Page Mode */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <Link
+          href="/targo"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111111] hover:bg-black text-white text-xs font-medium shadow-xl border border-slate-700 transition-all hover:scale-105 cursor-pointer"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#15BCDF] animate-pulse" />
+          <span>View Targo Single-Page Experience</span>
+        </Link>
+      </div>
+
+      {/* Global Interactive Modals */}
+      <BookDemoModal isOpen={isDemoOpen} onClose={closeDemo} />
+      <DayWithBeeModal
+        isOpen={isDayTimelineOpen}
+        onClose={closeDayTimeline}
+        onOpenDemo={openDemo}
+      />
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <DatabaseProvider>
+      <RouterProvider>
+        <ModalProvider>
+          <AppContent />
+        </ModalProvider>
+      </RouterProvider>
+    </DatabaseProvider>
+  );
+}

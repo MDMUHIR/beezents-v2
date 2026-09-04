@@ -1,0 +1,6 @@
+{
+  "name": "BEEZENTS - AI Automation Agency",
+  "description": "BEEZENTS designs and deploys custom AI agents, automation workflows, and intelligent data systems that help businesses scale faster and operate smarter.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
