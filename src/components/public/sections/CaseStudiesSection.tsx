@@ -2,8 +2,9 @@ import React from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Link } from "../../../context/RouterContext";
 import { Container, DataGlyph, Reveal, SectionHeading } from "../SiteUI";
+import { useDatabase } from "../../../context/DatabaseContext";
 
-const studies = [
+const fallbackStudies = [
   {
     category: "AI AUTOMATION",
     title: "E-commerce Order Automation",
@@ -27,9 +28,22 @@ const studies = [
   },
 ];
 
-export const CaseStudiesSection: React.FC = () => (
-  <section id="case-studies" className="scroll-mt-24 py-24 sm:py-32">
-    <Container>
+export const CaseStudiesSection: React.FC = () => {
+  const { getCaseStudies } = useDatabase();
+  const cmsStudies = getCaseStudies();
+  const studies = cmsStudies.length
+    ? cmsStudies.slice(0, 3).map((study, index) => ({
+        category: study.industry || 'CASE STUDY',
+        title: study.title,
+        text: study.summary,
+        href: `/case-studies/${study.slug}`,
+        kind: fallbackStudies[index % fallbackStudies.length].kind,
+      }))
+    : fallbackStudies;
+
+  return (
+    <section id="case-studies" className="scroll-mt-24 py-24 sm:py-32">
+      <Container>
       <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
         <SectionHeading
           eyebrow="Our work"
@@ -71,7 +85,8 @@ export const CaseStudiesSection: React.FC = () => (
         ))}
       </div>
     </Container>
-  </section>
-);
+    </section>
+  );
+};
 
 export default CaseStudiesSection;

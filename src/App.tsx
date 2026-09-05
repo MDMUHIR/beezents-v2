@@ -37,11 +37,10 @@ import { AdminProjects } from './components/admin/AdminProjects';
 import { AdminCaseStudies } from './components/admin/AdminCaseStudies';
 import { AdminServices } from './components/admin/AdminServices';
 import { AdminSolutions } from './components/admin/AdminSolutions';
-import { AdminBlog } from './components/admin/AdminBlog';
 import { AdminInquiries } from './components/admin/AdminInquiries';
 import { AdminMedia } from './components/admin/AdminMedia';
-import { AdminUsers } from './components/admin/AdminUsers';
 import { AdminSettings } from './components/admin/AdminSettings';
+import { AdminBackendNotice } from './components/admin/AdminBackendNotice';
 
 const AppContent: React.FC = () => {
   const { path } = useRouter();
@@ -77,13 +76,13 @@ const AppContent: React.FC = () => {
     } else if (path.startsWith('/admin/solutions')) {
       adminChild = <AdminSolutions />;
     } else if (path.startsWith('/admin/blog')) {
-      adminChild = <AdminBlog />;
+      adminChild = <AdminBackendNotice title="Blog management is not available" detail="The current backend contract exposes projects, case studies, services, solutions, leads, and media. Blog CRUD is not exposed, so this screen does not write to local-only data." />;
     } else if (path.startsWith('/admin/inquiries')) {
       adminChild = <AdminInquiries />;
     } else if (path.startsWith('/admin/media')) {
       adminChild = <AdminMedia />;
     } else if (path.startsWith('/admin/users')) {
-      adminChild = <AdminUsers />;
+      adminChild = <AdminBackendNotice title="User management is not available" detail="The backend intentionally does not expose a user administration API. Roles are assigned server-side and users cannot change their own role." />;
     } else if (path.startsWith('/admin/settings')) {
       adminChild = <AdminSettings />;
     } else {

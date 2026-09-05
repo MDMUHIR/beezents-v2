@@ -10,7 +10,7 @@ interface BookDemoModalProps {
 }
 
 export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose }) => {
-  const { addInquiry } = useDatabase();
+  const { submitInquiry } = useDatabase();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -22,19 +22,19 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
 
-    addInquiry({
-      name,
-      email,
-      company,
-      serviceId: 'demo-booking',
-      message: `Booked Demo for ${selectedDay} at ${selectedTime}. Primary Use Case: ${useCase}.`,
-    });
-
-    setSubmitted(true);
+    try {
+      await submitInquiry({
+        name: name.trim(), email: email.trim(), company: company.trim(), phone: '', projectType: useCase, budgetRange: 'Not specified',
+        message: `Booked demo for ${selectedDay} at ${selectedTime} (EST). Primary use case: ${useCase}.`,
+      });
+      setSubmitted(true);
+    } catch {
+      window.alert('We could not submit your demo request. Please try again.');
+    }
     setTimeout(() => {
       // Auto close after 3 seconds if user hasn't closed it
     }, 3000);

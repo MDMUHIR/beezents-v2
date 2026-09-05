@@ -11,10 +11,11 @@ import {
   AdminUser,
   SiteSettings,
   InquiryStatus,
-  UserRole
+  UserRole,
+  ProjectType
 } from '../types';
 import { initialDatabase } from '../data/seedData';
-import { api, DEFAULT_API_BASE_URL } from '../api';
+import { api } from '../api';
 
 interface AuthSession {
   user: AdminUser | null;
@@ -38,7 +39,7 @@ interface DatabaseContextType {
   logout: () => void;
   hasRole: (requiredRole: UserRole) => boolean;
 
-  // Remote Backend API (Base: http://192.168.0.109:8000/)
+  // Remote Backend API (configured with VITE_API_BASE_URL)
   api: typeof api;
   apiBaseUrl: string;
   setApiBaseUrl: (url: string) => void;
@@ -47,10 +48,13 @@ interface DatabaseContextType {
   checkApiHealth: () => Promise<void>;
   isSyncing: boolean;
   syncWithApi: () => Promise<{ success: boolean; message?: string }>;
+  mutationError: string | null;
+  clearMutationError: () => void;
 
   // Services
   getServices: (includeDrafts?: boolean) => Service[];
   getServiceBySlug: (slug: string) => Service | undefined;
+  loadServiceBySlug: (slug: string) => Promise<Service | undefined>;
   createService: (data: Omit<Service, 'id' | 'createdAt' | 'updatedAt'>) => Service;
   updateService: (id: string, data: Partial<Service>) => void;
   deleteService: (id: string) => void;
@@ -59,6 +63,7 @@ interface DatabaseContextType {
   // Solutions
   getSolutions: (includeDrafts?: boolean) => Solution[];
   getSolutionBySlug: (slug: string) => Solution | undefined;
+  loadSolutionBySlug: (slug: string) => Promise<Solution | undefined>;
   createSolution: (data: Omit<Solution, 'id' | 'createdAt' | 'updatedAt'>) => Solution;
   updateSolution: (id: string, data: Partial<Solution>) => void;
   deleteSolution: (id: string) => void;
@@ -66,6 +71,7 @@ interface DatabaseContextType {
   // Projects
   getProjects: (includeDrafts?: boolean) => Project[];
   getProjectBySlug: (slug: string) => Project | undefined;
+  loadProjectBySlug: (slug: string) => Promise<Project | undefined>;
   createProject: (data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Project;
   updateProject: (id: string, data: Partial<Project>) => void;
   deleteProject: (id: string) => void;
@@ -73,6 +79,7 @@ interface DatabaseContextType {
   // Case Studies
   getCaseStudies: (includeDrafts?: boolean) => CaseStudy[];
   getCaseStudyBySlug: (slug: string) => CaseStudy | undefined;
+  loadCaseStudyBySlug: (slug: string) => Promise<CaseStudy | undefined>;
   createCaseStudy: (data: Omit<CaseStudy, 'id' | 'createdAt' | 'updatedAt'>) => CaseStudy;
   updateCaseStudy: (id: string, data: Partial<CaseStudy>) => void;
   deleteCaseStudy: (id: string) => void;
@@ -96,6 +103,7 @@ interface DatabaseContextType {
   getMedia: () => MediaItem[];
   getMediaItems: () => MediaItem[];
   uploadMedia: (media: Omit<MediaItem, 'id' | 'uploadedAt'>) => MediaItem;
+  uploadMediaFile: (file: File, folder?: string, altText?: string) => Promise<MediaItem>;
   addMediaItem: (media: Omit<MediaItem, 'id' | 'uploadedAt'>) => MediaItem;
   deleteMedia: (id: string) => void;
   deleteMediaItem: (id: string) => void;
@@ -121,6 +129,120 @@ const AUTH_KEY = 'beezent_auth_v2';
 
 const DatabaseContext = createContext<DatabaseContextType | null>(null);
 
+type ApiRecord = Record<string, any>;
+
+const record = (value: unknown): ApiRecord => (value && typeof value === 'object' ? value as ApiRecord : {});
+const value = (item: ApiRecord, ...keys: string[]) => keys.map(key => item[key]).find(itemValue => itemValue !== undefined);
+const list = (item: ApiRecord, ...keys: string[]): any[] => {
+  const result = value(item, ...keys);
+  return Array.isArray(result) ? result : [];
+};
+const iso = (item: ApiRecord, ...keys: string[]) => String(value(item, ...keys) || new Date().toISOString());
+const assetUrl = (raw: unknown) => {
+  const url = String(raw || '');
+  return url.startsWith('/') ? `${api.getBaseUrl()}${url}` : url;
+};
+const itemsFrom = (response: any): any[] => {
+  const data = response?.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.items)) return data.items;
+  return [];
+};
+const contentStatus = (item: ApiRecord) => {
+  const published = value(item, 'published', 'is_published');
+  if (published !== undefined) return published ? 'PUBLISHED' : 'DRAFT';
+  const status = String(value(item, 'status') || '').toLowerCase();
+  return !status || ['published', 'active', 'completed', 'archived'].includes(status) ? 'PUBLISHED' : 'DRAFT';
+};
+const apiRole = (role: unknown): UserRole => {
+  switch (String(role).toLowerCase()) {
+    case 'admin': return 'SUPER_ADMIN';
+    case 'staff': return 'ADMIN';
+    default: return 'EDITOR';
+  }
+};
+const normalizeUser = (raw: unknown): AdminUser => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''),
+    name: String(value(item, 'full_name', 'name') || value(item, 'email') || 'User'),
+    email: String(value(item, 'email') || ''),
+    role: apiRole(value(item, 'role')),
+    status: value(item, 'is_active', 'active', 'status') === false || String(value(item, 'status')).toLowerCase() === 'inactive' ? 'INACTIVE' : 'ACTIVE',
+    createdAt: iso(item, 'created_at', 'createdAt'),
+    lastLoginAt: value(item, 'last_login_at', 'lastLoginAt') || undefined,
+  };
+};
+const normalizeService = (raw: unknown): Service => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''),
+    shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: String(value(item, 'description', 'full_description', 'fullDescription') || ''),
+    icon: String(value(item, 'icon') || 'Bot'), heroVisual: value(item, 'hero_visual', 'heroVisual'), features: list(item, 'features'), benefits: list(item, 'benefits'),
+    technologies: list(item, 'technologies'), process: list(item, 'process').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
+    problemStatement: value(item, 'problem_statement', 'problemStatement'), ourApproach: value(item, 'our_approach', 'ourApproach'), ctaText: value(item, 'cta_text', 'ctaText'),
+    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), status: contentStatus(item),
+    sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+  };
+};
+const normalizeSolution = (raw: unknown): Solution => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''), category: String(value(item, 'category') || ''),
+    shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), description: String(value(item, 'description') || ''), fullDescription: value(item, 'description', 'full_description', 'fullDescription'),
+    businessProblem: String(value(item, 'business_problem', 'businessProblem') || ''), problemSolved: value(item, 'business_problem', 'businessProblem'), solution: String(value(item, 'solution') || ''), howItWorks: value(item, 'solution', 'how_it_works', 'howItWorks'),
+    features: list(item, 'features'), benefits: list(item, 'benefits'), workflow: list(item, 'workflow').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
+    integrations: list(item, 'integrations'), technologies: list(item, 'technologies'), visual: value(item, 'visual'), relatedProjectIds: list(item, 'related_project_ids', 'relatedProjectIds'), ctaText: value(item, 'cta_text', 'ctaText'),
+    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), status: contentStatus(item), featured: Boolean(value(item, 'featured') || false), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+  };
+};
+const normalizeProject = (raw: unknown): Project => {
+  const item = record(raw);
+  const description = String(value(item, 'description', 'full_description', 'fullDescription', 'overview') || '');
+  return {
+    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: description,
+    projectType: String(value(item, 'project_type', 'projectType') || 'Other') as ProjectType, industry: String(value(item, 'industry') || ''), client: value(item, 'client_name', 'clientName', 'client'), clientName: value(item, 'client_name', 'clientName', 'client'), timeline: value(item, 'timeline'),
+    coverImage: assetUrl(value(item, 'cover_image', 'coverImage')), gallery: list(item, 'gallery').map(assetUrl), technologies: list(item, 'technologies'), servicesUsed: list(item, 'services_used', 'servicesUsed'), features: list(item, 'features'), projectUrl: value(item, 'project_url', 'projectUrl'), liveUrl: value(item, 'live_url', 'liveUrl'), githubUrl: value(item, 'github_url', 'githubUrl'), completionDate: String(value(item, 'completion_date', 'completionDate') || ''), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), overview: String(value(item, 'overview') || description), challenge: String(value(item, 'challenge') || ''), solution: String(value(item, 'solution') || ''), implementation: String(value(item, 'implementation') || ''), results: list(item, 'results'), relatedServiceIds: list(item, 'related_service_ids', 'relatedServiceIds'), relatedCaseStudyId: value(item, 'related_case_study_id', 'relatedCaseStudyId'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), ogImage: assetUrl(value(item, 'og_image', 'ogImage')), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+  };
+};
+const normalizeCaseStudy = (raw: unknown): CaseStudy => {
+  const item = record(raw); const testimonial = record(value(item, 'testimonial')); const project = record(value(item, 'project'));
+  return {
+    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), client: String(value(item, 'client', 'client_name') || value(project, 'title') || ''), industry: String(value(item, 'industry') || ''), summary: String(value(item, 'summary') || ''), challenge: String(value(item, 'challenge') || ''), objectives: list(item, 'objectives'), solution: String(value(item, 'solution') || ''), architectureDescription: String(value(item, 'architecture_description', 'architectureDescription') || ''), architectureDetails: value(item, 'architecture_description', 'architectureDescription'), implementation: String(value(item, 'implementation') || ''), workflowSteps: list(item, 'workflow_steps', 'workflowSteps'), technologies: list(item, 'technologies'), process: list(item, 'process'), measurableResults: list(item, 'metrics', 'measurable_results', 'measurableResults'), testimonial: { quote: String(value(testimonial, 'quote') || ''), author: String(value(testimonial, 'author') || ''), role: String(value(testimonial, 'role') || ''), company: String(value(testimonial, 'company') || ''), avatar: value(testimonial, 'avatar') }, coverImage: assetUrl(value(item, 'cover_image', 'coverImage')), gallery: list(item, 'gallery').map(assetUrl), relatedProjectId: value(item, 'project_id', 'related_project_id', 'relatedProjectId'), relatedServices: list(item, 'related_services', 'relatedServices'), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), publishDate: iso(item, 'publish_date', 'publishDate'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+  };
+};
+const normalizeLead = (raw: unknown): Inquiry => {
+  const item = record(raw); const status = String(value(item, 'status') || 'new').toLowerCase();
+  const notes = String(value(item, 'notes') || '');
+  const mappedStatus: InquiryStatus = ({ new: 'New', contacted: 'Contacted', qualified: 'In Progress', converted: 'Converted', lost: 'Closed' } as Record<string, InquiryStatus>)[status] || 'New';
+  return { id: String(value(item, 'id') || ''), name: String(value(item, 'name') || ''), email: String(value(item, 'email') || ''), company: String(value(item, 'company') || ''), phone: value(item, 'phone'), projectType: String(value(item, 'service', 'project_type', 'projectType') || 'General Inquiry'), budgetRange: String(value(item, 'budget_range', 'budgetRange') || 'Not specified'), message: String(value(item, 'message') || ''), status: mappedStatus, notes: notes ? [notes] : [], internalNotes: notes ? [{ id: `note-${item.id}`, author: 'Staff', note: notes, createdAt: iso(item, 'updated_at', 'updatedAt') }] : [], createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt') };
+};
+const normalizeMedia = (raw: unknown): MediaItem => {
+  const item = record(raw); const bytes = Number(value(item, 'size') || 0);
+  return { id: String(value(item, 'id') || ''), name: String(value(item, 'original_name', 'name') || ''), url: assetUrl(value(item, 'public_url', 'url')), size: bytes ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : '', type: String(value(item, 'mime_type', 'type') || ''), alt: String(value(item, 'alt_text', 'alt') || ''), uploadedAt: iso(item, 'created_at', 'uploadedAt'), width: value(item, 'width'), height: value(item, 'height') };
+};
+
+const projectPayload = (data: Partial<Project>, isCreate = false) => ({
+  title: data.title, slug: data.slug, short_description: data.shortDescription, description: data.fullDescription || data.overview,
+  client_name: data.clientName || data.client, industry: data.industry, project_type: data.projectType || (isCreate ? 'Other' : undefined), ...(isCreate ? { status: 'active' } : {}),
+  ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), featured: data.featured, cover_image: data.coverImage, gallery: data.gallery || (isCreate ? [] : undefined), technologies: data.technologies || (isCreate ? [] : undefined),
+  results: data.results || (isCreate ? [] : undefined), live_url: data.liveUrl, github_url: data.githubUrl, sort_order: data.sortOrder ?? (isCreate ? 0 : undefined), overview: data.overview || data.fullDescription,
+  challenge: data.challenge, solution: data.solution, implementation: data.implementation, related_service_ids: data.relatedServiceIds, related_case_study_id: data.relatedCaseStudyId,
+});
+const servicePayload = (data: Partial<Service>) => ({
+  name: data.title, slug: data.slug, short_description: data.shortDescription, description: data.fullDescription, icon: data.icon, features: data.features, benefits: data.benefits,
+  technologies: data.technologies, process: data.process, cta_text: data.ctaText, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), sort_order: data.sortOrder, problem_statement: data.problemStatement, our_approach: data.ourApproach, seo_title: data.seoTitle, seo_description: data.seoDescription,
+});
+const solutionPayload = (data: Partial<Solution>) => ({
+  name: data.title, slug: data.slug, category: data.category, short_description: data.shortDescription, description: data.description || data.fullDescription, business_problem: data.businessProblem || data.problemSolved, solution: data.solution || data.howItWorks,
+  features: data.features, benefits: data.benefits, workflow: data.workflow, integrations: data.integrations, technologies: data.technologies, visual: data.visual, featured: data.featured, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), cta_text: data.ctaText, seo_title: data.seoTitle, seo_description: data.seoDescription,
+});
+const caseStudyPayload = (data: Partial<CaseStudy>, isCreate = false) => ({
+  title: data.title, slug: data.slug, ...(isCreate || Object.prototype.hasOwnProperty.call(data, 'relatedProjectId') ? { project_id: data.relatedProjectId || null } : {}), summary: data.summary, challenge: data.challenge, objectives: data.objectives, solution: data.solution,
+  architecture_description: data.architectureDescription || data.architectureDetails, implementation: data.implementation, workflow_steps: data.workflowSteps, technologies: data.technologies, process: data.process, metrics: data.measurableResults, testimonial: data.testimonial,
+  cover_image: data.coverImage, gallery: data.gallery || (isCreate ? [] : undefined), featured: data.featured, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), publish_date: data.publishDate, seo_title: data.seoTitle, seo_description: data.seoDescription,
+});
+
 export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [db, setDb] = useState<AppDatabase>(() => {
     try {
@@ -134,35 +256,25 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return initialDatabase;
   });
 
-  const [auth, setAuth] = useState<AuthSession>(() => {
-    try {
-      const savedAuth = localStorage.getItem(AUTH_KEY);
-      if (savedAuth) {
-        const parsed = JSON.parse(savedAuth);
-        return {
-          user: parsed.user || null,
-          token: parsed.token || null,
-          isAuthenticated: !!parsed.user,
-        };
-      }
-    } catch (e) {
-      console.warn('Failed to load auth session', e);
-    }
-    // Default logged in as Super Admin for instant preview demonstration
-    return {
-      user: initialDatabase.users[0],
-      token: 'session-demo-token-alex-chen',
-      isAuthenticated: true,
-    };
+  const [auth, setAuth] = useState<AuthSession>({
+      user: null,
+      token: null,
+      isAuthenticated: false,
   });
 
-  // Remote API Integration State (Base URL: http://192.168.0.109:8000/)
+  // Remote API Integration State
   const [apiBaseUrl, setApiBaseUrlState] = useState<string>(() => api.getBaseUrl());
   const [apiHealth, setApiHealth] = useState<ApiHealthState>({
     status: 'checking',
     lastChecked: undefined,
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
+  const clearMutationError = () => setMutationError(null);
+  const reportMutationFailure = (action: string, error?: string) => {
+    setMutationError(`${action} failed${error ? `: ${error}` : '.'}`);
+  };
 
   const setApiBaseUrl = (newUrl: string) => {
     api.setBaseUrl(newUrl);
@@ -208,36 +320,28 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Sync data from remote backend API if active
+  // Public content is available without a session. Admin lists are loaded after /auth/me.
   const syncWithApi = async (): Promise<{ success: boolean; message?: string }> => {
     setIsSyncing(true);
     try {
       const [servicesRes, solutionsRes, projectsRes, caseStudiesRes] = await Promise.all([
-        api.getServices(),
-        api.getSolutions(),
-        api.getProjects(),
-        api.getCaseStudies(),
+        api.getServices({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
+        api.getSolutions({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
+        api.getProjects({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
+        api.getCaseStudies({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
       ]);
 
       let importedCount = 0;
       setDb(prev => {
         const next = { ...prev };
-        if (servicesRes.success && Array.isArray(servicesRes.data) && servicesRes.data.length > 0) {
-          next.services = servicesRes.data;
-          importedCount += servicesRes.data.length;
-        }
-        if (solutionsRes.success && Array.isArray(solutionsRes.data) && solutionsRes.data.length > 0) {
-          next.solutions = solutionsRes.data;
-          importedCount += solutionsRes.data.length;
-        }
-        if (projectsRes.success && Array.isArray(projectsRes.data) && projectsRes.data.length > 0) {
-          next.projects = projectsRes.data;
-          importedCount += projectsRes.data.length;
-        }
-        if (caseStudiesRes.success && Array.isArray(caseStudiesRes.data) && caseStudiesRes.data.length > 0) {
-          next.caseStudies = caseStudiesRes.data;
-          importedCount += caseStudiesRes.data.length;
-        }
+        const services = servicesRes.success ? itemsFrom(servicesRes).map(normalizeService) : [];
+        const solutions = solutionsRes.success ? itemsFrom(solutionsRes).map(normalizeSolution) : [];
+        const projects = projectsRes.success ? itemsFrom(projectsRes).map(normalizeProject) : [];
+        const caseStudies = caseStudiesRes.success ? itemsFrom(caseStudiesRes).map(normalizeCaseStudy) : [];
+        if (servicesRes.success) { next.services = services; importedCount += services.length; }
+        if (solutionsRes.success) { next.solutions = solutions; importedCount += solutions.length; }
+        if (projectsRes.success) { next.projects = projects; importedCount += projects.length; }
+        if (caseStudiesRes.success) { next.caseStudies = caseStudies; importedCount += caseStudies.length; }
         return next;
       });
 
@@ -258,9 +362,35 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  // Run initial health check on startup
+  const syncAdminWithApi = async () => {
+    const [projects, services, solutions, caseStudies, leads, files] = await Promise.all([
+      api.listAdminProjects({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }), api.listAdminServices({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }), api.listAdminSolutions({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
+      api.listAdminCaseStudies({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }), api.listAdminLeads({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }), api.listAdminFiles({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
+    ]);
+    setDb(prev => ({
+      ...prev,
+      projects: projects.success ? itemsFrom(projects).map(normalizeProject) : prev.projects,
+      services: services.success ? itemsFrom(services).map(normalizeService) : prev.services,
+      solutions: solutions.success ? itemsFrom(solutions).map(normalizeSolution) : prev.solutions,
+      caseStudies: caseStudies.success ? itemsFrom(caseStudies).map(normalizeCaseStudy) : prev.caseStudies,
+      inquiries: leads.success ? itemsFrom(leads).map(normalizeLead) : prev.inquiries,
+      media: files.success ? itemsFrom(files).map(normalizeMedia) : prev.media,
+    }));
+  };
+
   useEffect(() => {
-    checkApiHealth();
+    void checkApiHealth();
+    void syncWithApi();
+    void api.getMe().then(response => {
+      if (!response.success || !response.data) return;
+      const user = normalizeUser(response.data);
+      if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+        void api.logout();
+        return;
+      }
+      setAuth({ user, token: null, isAuthenticated: true });
+      void syncAdminWithApi();
+    });
   }, []);
 
   // Persist DB updates to localStorage
@@ -276,11 +406,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     try {
       localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
-      if (auth.token) {
-        api.setToken(auth.token);
-      } else {
-        api.setToken(null);
-      }
+      api.setToken(null);
     } catch (e) {
       console.error('Error saving auth to localStorage', e);
     }
@@ -292,71 +418,24 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   ): Promise<{ success: boolean; error?: string; source?: 'api' | 'local' }> => {
     const trimmedEmail = email.trim().toLowerCase();
 
-    // 1. Attempt official remote backend login via POST /api/v1/auth/login
-    try {
-      const apiRes = await api.login({ email: trimmedEmail, password: pass });
-      if (apiRes.success && apiRes.data) {
-        const token = apiRes.data.token || apiRes.data.access_token || `tok_api_${Date.now()}`;
-        const rawUser = apiRes.data.user;
-        const userData: AdminUser = {
-          id: rawUser?.id || `usr-remote-${Date.now()}`,
-          name: rawUser?.name || trimmedEmail.split('@')[0],
-          email: rawUser?.email || trimmedEmail,
-          role: (rawUser?.role as UserRole) || 'ADMIN',
-          status: (rawUser?.status as any) || 'ACTIVE',
-          createdAt: rawUser?.createdAt || new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
-        };
-
-        const session: AuthSession = {
-          user: userData,
-          token,
-          isAuthenticated: true,
-        };
-
-        setAuth(session);
-        setApiHealth(prev => ({ ...prev, status: 'online' }));
-        return { success: true, source: 'api' };
-      }
-    } catch (apiErr) {
-      console.warn('API authentication attempt failed, trying local fallback credentials', apiErr);
+    const apiRes = await api.login({ email: trimmedEmail, password: pass });
+    if (!apiRes.success || !apiRes.data) {
+      return { success: false, error: apiRes.error || 'Invalid email or password.' };
     }
 
-    // 2. Local fallback authentication
-    const user = db.users.find(u => u.email.toLowerCase() === trimmedEmail && u.status === 'ACTIVE');
-    
-    if (!user) {
-      return { success: false, error: 'No active user found with this email address.' };
+    const user = normalizeUser(apiRes.data);
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      void api.logout();
+      return { success: false, error: 'Your account does not have CMS access.' };
     }
-
-    // In demo environment, accept any non-empty password or standard 'admin'
-    if (!pass || pass.length < 3) {
-      return { success: false, error: 'Password must be at least 3 characters.' };
-    }
-
-    const updatedUser = {
-      ...user,
-      lastLoginAt: new Date().toISOString(),
-    };
-
-    setDb(prev => ({
-      ...prev,
-      users: prev.users.map(u => (u.id === user.id ? updatedUser : u)),
-    }));
-
-    const session: AuthSession = {
-      user: updatedUser,
-      token: `auth_tok_${Date.now()}_${user.id}`,
-      isAuthenticated: true,
-    };
-
-    setAuth(session);
-    return { success: true, source: 'local' };
+    setAuth({ user, token: null, isAuthenticated: true });
+    setApiHealth(prev => ({ ...prev, status: 'online' }));
+    void syncAdminWithApi();
+    return { success: true, source: 'api' };
   };
 
   const logout = () => {
-    // Dispatch remote logout call
-    api.logout().catch(() => {});
+    void api.logout();
     setAuth({
       user: null,
       token: null,
@@ -380,7 +459,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getServiceBySlug = (slug: string): Service | undefined => {
-    return db.services.find(s => s.slug === slug);
+    return db.services.find(s => s.slug === slug && s.status === 'PUBLISHED');
+  };
+
+  const loadServiceBySlug = async (slug: string): Promise<Service | undefined> => {
+    const response = await api.getServiceBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const service = normalizeService(response.data);
+    setDb(prev => ({ ...prev, services: [...prev.services.filter(item => item.id !== service.id), service] }));
+    return service;
   };
 
   const createService = (data: Omit<Service, 'id' | 'createdAt' | 'updatedAt'>): Service => {
@@ -395,8 +482,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       services: [...prev.services, newService],
     }));
-    // Sync with remote API
-    api.createAdminService(newService).catch(() => {});
+    void api.createAdminService(servicePayload(newService)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, services: prev.services.map(item => item.id === newService.id ? normalizeService(res.data) : item) }));
+      else { reportMutationFailure('Creating service', res.error); void syncAdminWithApi(); }
+    });
     return newService;
   };
 
@@ -407,8 +496,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         s.id === id ? { ...s, ...data, updatedAt: new Date().toISOString() } : s
       ),
     }));
-    // Sync with remote API
-    api.updateAdminService(id, data).catch(() => {});
+    void api.updateAdminService(id, servicePayload(data)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, services: prev.services.map(item => item.id === id ? normalizeService(res.data) : item) }));
+      else { reportMutationFailure('Updating service', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const deleteService = (id: string) => {
@@ -416,8 +507,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       services: prev.services.filter(s => s.id !== id),
     }));
-    // Sync with remote API
-    api.deleteAdminService(id).catch(() => {});
+    void api.deleteAdminService(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting service', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const reorderServices = (orderedIds: string[]) => {
@@ -428,6 +520,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       });
       return { ...prev, services: updated };
     });
+    orderedIds.forEach((id, index) => void api.updateAdminService(id, { sort_order: index + 1 }).then(res => {
+      if (!res.success) { reportMutationFailure('Reordering services', res.error); void syncAdminWithApi(); }
+    }));
   };
 
   // ---------------- Solutions ----------------
@@ -436,7 +531,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getSolutionBySlug = (slug: string): Solution | undefined => {
-    return db.solutions.find(s => s.slug === slug);
+    return db.solutions.find(s => s.slug === slug && s.status === 'PUBLISHED');
+  };
+
+  const loadSolutionBySlug = async (slug: string): Promise<Solution | undefined> => {
+    const response = await api.getSolutionBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const solution = normalizeSolution(response.data);
+    setDb(prev => ({ ...prev, solutions: [...prev.solutions.filter(item => item.id !== solution.id), solution] }));
+    return solution;
   };
 
   const createSolution = (data: Omit<Solution, 'id' | 'createdAt' | 'updatedAt'>): Solution => {
@@ -451,8 +554,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       solutions: [...prev.solutions, newSolution],
     }));
-    // Sync with remote API
-    api.createAdminSolution(newSolution).catch(() => {});
+    void api.createAdminSolution(solutionPayload(newSolution)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, solutions: prev.solutions.map(item => item.id === newSolution.id ? normalizeSolution(res.data) : item) }));
+      else { reportMutationFailure('Creating solution', res.error); void syncAdminWithApi(); }
+    });
     return newSolution;
   };
 
@@ -463,8 +568,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         s.id === id ? { ...s, ...data, updatedAt: new Date().toISOString() } : s
       ),
     }));
-    // Sync with remote API
-    api.updateAdminSolution(id, data).catch(() => {});
+    void api.updateAdminSolution(id, solutionPayload(data)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, solutions: prev.solutions.map(item => item.id === id ? normalizeSolution(res.data) : item) }));
+      else { reportMutationFailure('Updating solution', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const deleteSolution = (id: string) => {
@@ -472,8 +579,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       solutions: prev.solutions.filter(s => s.id !== id),
     }));
-    // Sync with remote API
-    api.deleteAdminSolution(id).catch(() => {});
+    void api.deleteAdminSolution(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting solution', res.error); void syncAdminWithApi(); }
+    });
   };
 
   // ---------------- Projects ----------------
@@ -483,7 +591,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getProjectBySlug = (slug: string): Project | undefined => {
-    return db.projects.find(p => p.slug === slug);
+    return db.projects.find(p => p.slug === slug && p.status === 'PUBLISHED');
+  };
+
+  const loadProjectBySlug = async (slug: string): Promise<Project | undefined> => {
+    const response = await api.getProjectBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const project = normalizeProject(response.data);
+    setDb(prev => ({ ...prev, projects: [...prev.projects.filter(item => item.id !== project.id), project] }));
+    return project;
   };
 
   const createProject = (data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Project => {
@@ -498,8 +614,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       projects: [...prev.projects, newProject],
     }));
-    // Sync with remote API
-    api.createAdminProject(newProject).catch(() => {});
+    void api.createAdminProject(projectPayload(newProject, true)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, projects: prev.projects.map(item => item.id === newProject.id ? normalizeProject(res.data) : item) }));
+      else { reportMutationFailure('Creating project', res.error); void syncAdminWithApi(); }
+    });
     return newProject;
   };
 
@@ -510,8 +628,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         p.id === id ? { ...p, ...data, updatedAt: new Date().toISOString() } : p
       ),
     }));
-    // Sync with remote API
-    api.updateAdminProject(id, data).catch(() => {});
+    void api.updateAdminProject(id, projectPayload(data)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, projects: prev.projects.map(item => item.id === id ? normalizeProject(res.data) : item) }));
+      else { reportMutationFailure('Updating project', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const deleteProject = (id: string) => {
@@ -519,8 +639,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       projects: prev.projects.filter(p => p.id !== id),
     }));
-    // Sync with remote API
-    api.deleteAdminProject(id).catch(() => {});
+    void api.deleteAdminProject(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting project', res.error); void syncAdminWithApi(); }
+    });
   };
 
   // ---------------- Case Studies ----------------
@@ -529,7 +650,15 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const getCaseStudyBySlug = (slug: string): CaseStudy | undefined => {
-    return db.caseStudies.find(c => c.slug === slug);
+    return db.caseStudies.find(c => c.slug === slug && c.status === 'PUBLISHED');
+  };
+
+  const loadCaseStudyBySlug = async (slug: string): Promise<CaseStudy | undefined> => {
+    const response = await api.getCaseStudyBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const caseStudy = normalizeCaseStudy(response.data);
+    setDb(prev => ({ ...prev, caseStudies: [...prev.caseStudies.filter(item => item.id !== caseStudy.id), caseStudy] }));
+    return caseStudy;
   };
 
   const createCaseStudy = (data: Omit<CaseStudy, 'id' | 'createdAt' | 'updatedAt'>): CaseStudy => {
@@ -544,8 +673,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       caseStudies: [...prev.caseStudies, newCaseStudy],
     }));
-    // Sync with remote API
-    api.createAdminCaseStudy(newCaseStudy).catch(() => {});
+    void api.createAdminCaseStudy(caseStudyPayload(newCaseStudy, true)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, caseStudies: prev.caseStudies.map(item => item.id === newCaseStudy.id ? normalizeCaseStudy(res.data) : item) }));
+      else { reportMutationFailure('Creating case study', res.error); void syncAdminWithApi(); }
+    });
     return newCaseStudy;
   };
 
@@ -556,8 +687,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         c.id === id ? { ...c, ...data, updatedAt: new Date().toISOString() } : c
       ),
     }));
-    // Sync with remote API
-    api.updateAdminCaseStudy(id, data).catch(() => {});
+    void api.updateAdminCaseStudy(id, caseStudyPayload(data)).then(res => {
+      if (res.success && res.data) setDb(prev => ({ ...prev, caseStudies: prev.caseStudies.map(item => item.id === id ? normalizeCaseStudy(res.data) : item) }));
+      else { reportMutationFailure('Updating case study', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const deleteCaseStudy = (id: string) => {
@@ -565,8 +698,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       caseStudies: prev.caseStudies.filter(c => c.id !== id),
     }));
-    // Sync with remote API
-    api.deleteAdminCaseStudy(id).catch(() => {});
+    void api.deleteAdminCaseStudy(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting case study', res.error); void syncAdminWithApi(); }
+    });
   };
 
   // ---------------- Blog Posts ----------------
@@ -623,9 +757,6 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const submitInquiry = async (
     data: Omit<Inquiry, 'id' | 'status' | 'internalNotes' | 'createdAt' | 'updatedAt'>
   ): Promise<Inquiry> => {
-    // Artificial latency for tactile response
-    await new Promise(res => setTimeout(res, 500));
-
     const now = new Date().toISOString();
     const newInquiry: Inquiry = {
       ...data,
@@ -636,30 +767,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updatedAt: now,
     };
 
-    setDb(prev => ({
-      ...prev,
-      inquiries: [newInquiry, ...prev.inquiries],
-    }));
-
-    // Dispatch real lead creation to POST /api/v1/leads at http://192.168.0.109:8000/
-    api
-      .createLead({
-        name: data.name,
-        email: data.email,
-        company: data.company,
-        phone: data.phone,
-        projectType: data.projectType,
-        budgetRange: data.budgetRange,
-        message: data.message,
-      })
-      .then(res => {
-        if (res.success) {
-          console.info('Successfully synced lead to POST /api/v1/leads:', res.data);
-        }
-      })
-      .catch(() => {});
-
-    return newInquiry;
+    const response = await api.createLead({
+      name: data.name, email: data.email, company: data.company, phone: data.phone,
+      service: data.projectType, source: 'website', message: `${data.message}\n\nProject type: ${data.projectType}. Budget: ${data.budgetRange}.`,
+    });
+    if (!response.success) throw new Error(response.error || 'Failed to submit inquiry.');
+    const savedInquiry = { ...newInquiry, id: String(response.data?.id || newInquiry.id) };
+    setDb(prev => ({ ...prev, inquiries: [savedInquiry, ...prev.inquiries] }));
+    return savedInquiry;
   };
 
   const updateInquiryStatus = (id: string, status: InquiryStatus) => {
@@ -669,8 +784,10 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         i.id === id ? { ...i, status, updatedAt: new Date().toISOString() } : i
       ),
     }));
-    // Sync with remote API PATCH /api/v1/admin/leads/{lead_id}
-    api.updateAdminLead(id, { status }).catch(() => {});
+    const apiStatus = ({ New: 'new', Contacted: 'contacted', 'In Progress': 'qualified', Converted: 'converted', Closed: 'lost', Archived: 'lost' } as Record<InquiryStatus, string>)[status];
+    void api.updateAdminLead(id, { status: apiStatus }).then(res => {
+      if (!res.success) { reportMutationFailure('Updating lead status', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const addInquiryNote = (id: string, note: string) => {
@@ -684,15 +801,21 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setDb(prev => ({
       ...prev,
       inquiries: prev.inquiries.map(i =>
-        i.id === id
+              i.id === id
           ? {
               ...i,
+              notes: [...(i.notes || []), note],
               internalNotes: [...i.internalNotes, newNote],
               updatedAt: new Date().toISOString(),
             }
           : i
       ),
     }));
+    const existing = db.inquiries.find(inquiry => inquiry.id === id);
+    const notes = [...(existing?.notes || []), note].join('\n');
+    void api.updateAdminLead(id, { notes }).then(res => {
+      if (!res.success) { reportMutationFailure('Saving lead note', res.error); void syncAdminWithApi(); }
+    });
   };
 
   const deleteInquiry = (id: string) => {
@@ -700,8 +823,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ...prev,
       inquiries: prev.inquiries.filter(i => i.id !== id),
     }));
-    // Sync with remote API DELETE /api/v1/admin/leads/{lead_id}
-    api.deleteAdminLead(id).catch(() => {});
+    void api.deleteAdminLead(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting lead', res.error); void syncAdminWithApi(); }
+    });
   };
 
   // ---------------- Media ----------------
@@ -722,13 +846,26 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return newMedia;
   };
 
+  const uploadMediaFile = async (file: File, folder?: string, altText?: string): Promise<MediaItem> => {
+    const response = await api.uploadAdminFile(file, folder, altText);
+    if (!response.success || !response.data) {
+      reportMutationFailure('Uploading media', response.error);
+      throw new Error(response.error || 'Media upload failed.');
+    }
+    const media = normalizeMedia(response.data);
+    setDb(prev => ({ ...prev, media: [media, ...prev.media] }));
+    return media;
+  };
+
   const deleteMedia = (id: string) => {
     setDb(prev => ({
       ...prev,
       media: prev.media.filter(m => m.id !== id),
     }));
     // Sync with remote API DELETE /api/v1/admin/files/{media_id}
-    api.deleteAdminFile(id).catch(() => {});
+    void api.deleteAdminFile(id).then(res => {
+      if (!res.success) { reportMutationFailure('Deleting media', res.error); void syncAdminWithApi(); }
+    });
   };
 
   // ---------------- Admin Users ----------------
@@ -798,7 +935,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         logout,
         hasRole,
 
-        // Remote Backend API (http://192.168.0.109:8000/)
+        // Remote Backend API
         api,
         apiBaseUrl,
         setApiBaseUrl,
@@ -807,29 +944,35 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         checkApiHealth,
         isSyncing,
         syncWithApi,
+        mutationError,
+        clearMutationError,
 
-        getServices,
-        getServiceBySlug,
-        createService,
+         getServices,
+         getServiceBySlug,
+         loadServiceBySlug,
+         createService,
         updateService,
         deleteService,
         reorderServices,
 
-        getSolutions,
-        getSolutionBySlug,
-        createSolution,
+         getSolutions,
+         getSolutionBySlug,
+         loadSolutionBySlug,
+         createSolution,
         updateSolution,
         deleteSolution,
 
-        getProjects,
-        getProjectBySlug,
-        createProject,
+         getProjects,
+         getProjectBySlug,
+         loadProjectBySlug,
+         createProject,
         updateProject,
         deleteProject,
 
-        getCaseStudies,
-        getCaseStudyBySlug,
-        createCaseStudy,
+         getCaseStudies,
+         getCaseStudyBySlug,
+         loadCaseStudyBySlug,
+         createCaseStudy,
         updateCaseStudy,
         deleteCaseStudy,
 
@@ -848,7 +991,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         getMedia,
         getMediaItems: getMedia,
-        uploadMedia,
+         uploadMedia,
+         uploadMediaFile,
         addMediaItem: uploadMedia,
         deleteMedia,
         deleteMediaItem: deleteMedia,

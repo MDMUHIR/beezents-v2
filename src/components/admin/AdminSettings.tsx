@@ -384,7 +384,7 @@ export const AdminSettings: React.FC = () => {
               type="text"
               value={apiUrlInput}
               onChange={e => setApiUrlInput(e.target.value)}
-              placeholder="http://192.168.0.109:8000"
+               placeholder="http://localhost:8000"
               className="flex-1 font-mono text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-[#0282EB] outline-hidden"
             />
             <div className="flex items-center gap-2">

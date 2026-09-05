@@ -15,17 +15,18 @@ import {
 } from 'lucide-react';
 
 export const AdminMedia: React.FC = () => {
-  const { getMediaItems, addMediaItem, deleteMediaItem } = useDatabase();
+  const { getMediaItems, uploadMediaFile, deleteMediaItem } = useDatabase();
   const mediaItems = getMediaItems();
 
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [newMedia, setNewMedia] = useState({
-    name: '',
-    url: '',
-    type: 'IMAGE' as 'IMAGE' | 'DOCUMENT',
+    file: null as File | null,
+    folder: '',
     alt: '',
   });
 
@@ -35,25 +36,20 @@ export const AdminMedia: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMedia.name.trim() || !newMedia.url.trim()) return;
-
-    addMediaItem({
-      name: newMedia.name.trim(),
-      url: newMedia.url.trim(),
-      type: newMedia.type,
-      size: '1.2 MB',
-      alt: newMedia.alt.trim() || newMedia.name.trim(),
-    });
-
-    setNewMedia({
-      name: '',
-      url: '',
-      type: 'IMAGE',
-      alt: '',
-    });
-    setModalOpen(false);
+    if (!newMedia.file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await uploadMediaFile(newMedia.file, newMedia.folder.trim() || undefined, newMedia.alt.trim() || undefined);
+      setNewMedia({ file: null, folder: '', alt: '' });
+      setModalOpen(false);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload failed.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -160,28 +156,25 @@ export const AdminMedia: React.FC = () => {
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Asset Title / Name *
+                  File *
                 </label>
                 <input
-                  type="text"
+                  type="file"
                   required
-                  placeholder="e.g. Multi-Agent DAG Topology Diagram"
-                  value={newMedia.name}
-                  onChange={e => setNewMedia({ ...newMedia, name: e.target.value })}
+                  accept="image/jpeg,image/png,image/gif,image/webp,image/avif,image/svg+xml,application/pdf"
+                  onChange={e => setNewMedia({ ...newMedia, file: e.target.files?.[0] || null })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Image URL *
-                </label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Folder</label>
                 <input
-                  type="url"
-                  required
-                  placeholder="https://..."
-                  value={newMedia.url}
-                  onChange={e => setNewMedia({ ...newMedia, url: e.target.value })}
+                  type="text"
+                  pattern="[a-z0-9_-]{1,100}"
+                  placeholder="hero"
+                  value={newMedia.folder}
+                  onChange={e => setNewMedia({ ...newMedia, folder: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
                 />
               </div>
@@ -200,6 +193,7 @@ export const AdminMedia: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                {uploadError && <span className="mr-auto text-xs text-red-600">{uploadError}</span>}
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
@@ -211,7 +205,7 @@ export const AdminMedia: React.FC = () => {
                   type="submit"
                   className="px-6 py-2 rounded-xl bg-[#0282EB] hover:bg-[#1d58c4] text-white text-xs font-semibold shadow-xs"
                 >
-                  Add Asset
+                  {uploading ? 'Uploading...' : 'Upload Asset'}
                 </button>
               </div>
             </form>

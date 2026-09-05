@@ -2,11 +2,13 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Bot, Cpu, Database, TrendingUp } from 'lucide-react';
 import { useRouter } from '../../../context/RouterContext';
+import { useDatabase } from '../../../context/DatabaseContext';
 
 export const ServicesSection: React.FC = () => {
   const { navigate } = useRouter();
+  const { getServices } = useDatabase();
 
-  const services = [
+  const fallbackServices = [
     {
       id: 'ai-agents',
       title: 'AI AGENTS',
@@ -70,6 +72,16 @@ export const ServicesSection: React.FC = () => {
       ),
     },
   ];
+  const cmsServices = getServices();
+  const services = cmsServices.length
+    ? cmsServices.slice(0, 4).map((service, index) => ({
+        id: service.id,
+        title: service.title.toUpperCase(),
+        description: service.shortDescription,
+        href: `/services/${service.slug}`,
+        icon: fallbackServices[index % fallbackServices.length].icon,
+      }))
+    : fallbackServices;
 
   return (
     <section id="services" className="py-16 sm:py-20 lg:py-24 bg-slate-100 border-b border-slate-100">

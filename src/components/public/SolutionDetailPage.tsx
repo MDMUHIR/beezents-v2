@@ -16,8 +16,28 @@ import {
 } from 'lucide-react';
 
 export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const { getSolutionBySlug, getProjects } = useDatabase();
-  const solution = getSolutionBySlug(slug);
+  const { getSolutionBySlug, loadSolutionBySlug, getProjects } = useDatabase();
+  const cachedSolution = getSolutionBySlug(slug);
+  const [remoteSolution, setRemoteSolution] = React.useState<typeof cachedSolution>(cachedSolution);
+  const [isLoading, setIsLoading] = React.useState(!cachedSolution);
+
+  React.useEffect(() => {
+    let active = true;
+    setIsLoading(!getSolutionBySlug(slug));
+    void loadSolutionBySlug(slug).then(result => {
+      if (active) {
+        setRemoteSolution(result);
+        setIsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [slug]);
+
+  const solution = remoteSolution || cachedSolution;
+
+  if (isLoading) {
+    return <div className="min-h-[50vh] flex items-center justify-center text-sm text-slate-500">Loading solution...</div>;
+  }
 
   if (!solution) {
     return (

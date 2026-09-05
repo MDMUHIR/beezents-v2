@@ -8,8 +8,8 @@ export const AdminLogin: React.FC = () => {
   const { navigate } = useRouter();
   const { login, auth } = useDatabase();
 
-  const [email, setEmail] = useState('admin@beezent.ai');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('MBadmin@beezents.com');
+  const [password, setPassword] = useState('Bee@MB');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +30,7 @@ export const AdminLogin: React.FC = () => {
 
   const handleQuickFill = (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword('admin123');
+    setPassword('Bee@MB');
     setError(null);
   };
 
@@ -113,54 +113,27 @@ export const AdminLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Fill Demo Roles */}
+          {/* Development seed account. Enable SEED_DEV_ADMIN in the backend first. */}
           <div className="pt-4 border-t border-slate-100">
             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <KeyRound className="w-3.5 h-3.5 text-[#0282EB]" />
-              <span>Instant Demo Accounts</span>
+               <span>Development Seed Account</span>
             </div>
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => handleQuickFill('admin@beezent.ai')}
+                onClick={() => handleQuickFill('MBadmin@beezents.com')}
                 className="w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs flex items-center justify-between transition-colors"
               >
                 <div>
-                  <div className="font-bold text-slate-800">Alex Chen (Super Admin)</div>
-                  <div className="text-[10px] text-slate-500">admin@beezent.ai</div>
+                  <div className="font-bold text-slate-800">Development Admin</div>
+                  <div className="text-[10px] text-slate-500">MBadmin@beezents.com</div>
                 </div>
                 <span className="text-[10px] bg-blue-100 text-[#0282EB] px-2 py-0.5 rounded-sm font-bold">
                   All Perms
                 </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleQuickFill('sarah.lin@beezent.ai')}
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs flex items-center justify-between transition-colors"
-              >
-                <div>
-                  <div className="font-bold text-slate-800">Sarah Lin (Admin)</div>
-                  <div className="text-[10px] text-slate-500">sarah.lin@beezent.ai</div>
-                </div>
-                <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-sm font-bold">
-                  Content + Inquiries
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('marcus.vance@beezent.ai')}
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs flex items-center justify-between transition-colors"
-              >
-                <div>
-                  <div className="font-bold text-slate-800">Marcus Vance (Editor)</div>
-                  <div className="text-[10px] text-slate-500">marcus.vance@beezent.ai</div>
-                </div>
-                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-sm font-bold">
-                  Content Only
-                </span>
-              </button>
             </div>
           </div>
         </div>

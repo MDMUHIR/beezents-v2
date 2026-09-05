@@ -26,8 +26,28 @@ const iconMap: Record<string, React.ReactNode> = {
 };
 
 export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const { getServiceBySlug, getProjects } = useDatabase();
-  const service = getServiceBySlug(slug);
+  const { getServiceBySlug, loadServiceBySlug, getProjects } = useDatabase();
+  const cachedService = getServiceBySlug(slug);
+  const [remoteService, setRemoteService] = React.useState<typeof cachedService>(cachedService);
+  const [isLoading, setIsLoading] = React.useState(!cachedService);
+
+  React.useEffect(() => {
+    let active = true;
+    setIsLoading(!getServiceBySlug(slug));
+    void loadServiceBySlug(slug).then(result => {
+      if (active) {
+        setRemoteService(result);
+        setIsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [slug]);
+
+  const service = remoteService || cachedService;
+
+  if (isLoading) {
+    return <div className="min-h-[50vh] flex items-center justify-center text-sm text-slate-500">Loading service...</div>;
+  }
 
   if (!service) {
     return (

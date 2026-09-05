@@ -16,8 +16,28 @@ import {
 } from 'lucide-react';
 
 export const ProjectDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const { getProjectBySlug, getCaseStudies } = useDatabase();
-  const project = getProjectBySlug(slug);
+  const { getProjectBySlug, loadProjectBySlug, getCaseStudies } = useDatabase();
+  const cachedProject = getProjectBySlug(slug);
+  const [remoteProject, setRemoteProject] = React.useState<typeof cachedProject>(cachedProject);
+  const [isLoading, setIsLoading] = React.useState(!cachedProject);
+
+  React.useEffect(() => {
+    let active = true;
+    setIsLoading(!getProjectBySlug(slug));
+    void loadProjectBySlug(slug).then(result => {
+      if (active) {
+        setRemoteProject(result);
+        setIsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [slug]);
+
+  const project = remoteProject || cachedProject;
+
+  if (isLoading) {
+    return <div className="min-h-[50vh] flex items-center justify-center text-sm text-slate-500">Loading project...</div>;
+  }
 
   if (!project) {
     return (

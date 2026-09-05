@@ -9,10 +9,8 @@ import {
   BookOpen,
   Cpu,
   Sparkles,
-  FileText,
   Mail,
   Image as ImageIcon,
-  Users,
   Settings,
   LogOut,
   ExternalLink,
@@ -26,7 +24,7 @@ import {
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { path, navigate } = useRouter();
-  const { auth, logout, getInquiries, apiBaseUrl, apiHealth } = useDatabase();
+  const { auth, logout, getInquiries, apiBaseUrl, apiHealth, mutationError, clearMutationError } = useDatabase();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isApiExplorerOpen, setIsApiExplorerOpen] = useState(false);
 
@@ -39,7 +37,6 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { label: 'Case Studies', href: '/admin/case-studies', icon: <BookOpen className="w-4 h-4" /> },
     { label: 'Services', href: '/admin/services', icon: <Cpu className="w-4 h-4" /> },
     { label: 'Solutions', href: '/admin/solutions', icon: <Sparkles className="w-4 h-4" /> },
-    { label: 'Blog & Articles', href: '/admin/blog', icon: <FileText className="w-4 h-4" /> },
     {
       label: 'Inquiries',
       href: '/admin/inquiries',
@@ -47,7 +44,6 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       badge: newInquiriesCount > 0 ? newInquiriesCount : undefined,
     },
     { label: 'Media Library', href: '/admin/media', icon: <ImageIcon className="w-4 h-4" /> },
-    { label: 'Admin Users', href: '/admin/users', icon: <Users className="w-4 h-4" /> },
     { label: 'Settings & SEO', href: '/admin/settings', icon: <Settings className="w-4 h-4" /> },
   ];
 
@@ -98,7 +94,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               }`}
             />
             <span className="font-mono text-[11px] font-bold text-slate-200 hidden sm:inline">
-              API: 192.168.0.109:8000
+              API: {apiBaseUrl.replace(/^https?:\/\//, '')}
             </span>
             <span className="font-mono text-[11px] font-bold text-slate-200 sm:hidden">
               API
@@ -234,9 +230,19 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         )}
 
         {/* Dynamic Admin Body Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <div className="max-w-[1440px] mx-auto">{children}</div>
-        </main>
+         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+           <div className="max-w-[1440px] mx-auto">
+             {mutationError && (
+               <div className="mb-5 flex items-start justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-800" role="alert">
+                 <span>{mutationError}</span>
+                 <button onClick={clearMutationError} className="font-bold text-rose-600 hover:text-rose-900" aria-label="Dismiss error">
+                   <X className="h-4 w-4" />
+                 </button>
+               </div>
+             )}
+             {children}
+           </div>
+         </main>
       </div>
 
       {/* Interactive REST API Diagnostics Modal */}

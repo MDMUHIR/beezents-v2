@@ -16,8 +16,28 @@ import {
 } from 'lucide-react';
 
 export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
-  const { getCaseStudyBySlug, getProjects } = useDatabase();
-  const caseStudy = getCaseStudyBySlug(slug);
+  const { getCaseStudyBySlug, loadCaseStudyBySlug, getProjects } = useDatabase();
+  const cachedCaseStudy = getCaseStudyBySlug(slug);
+  const [remoteCaseStudy, setRemoteCaseStudy] = React.useState<typeof cachedCaseStudy>(cachedCaseStudy);
+  const [isLoading, setIsLoading] = React.useState(!cachedCaseStudy);
+
+  React.useEffect(() => {
+    let active = true;
+    setIsLoading(!getCaseStudyBySlug(slug));
+    void loadCaseStudyBySlug(slug).then(result => {
+      if (active) {
+        setRemoteCaseStudy(result);
+        setIsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [slug]);
+
+  const caseStudy = remoteCaseStudy || cachedCaseStudy;
+
+  if (isLoading) {
+    return <div className="min-h-[50vh] flex items-center justify-center text-sm text-slate-500">Loading case study...</div>;
+  }
 
   if (!caseStudy) {
     return (

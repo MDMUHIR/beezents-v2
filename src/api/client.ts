@@ -1,608 +1,232 @@
-/**
- * The Beezent Official API Client
- * Configured API Base: http://192.168.0.109:8000/
- *
- * Implements full REST specification for:
- * - Health (/api/v1/health, /api/v1/health/db, /health)
- * - Auth (/api/v1/auth/register, /api/v1/auth/login, /api/v1/auth/logout, /api/v1/auth/me)
- * - Development (/api/v1/dev/staff, /api/v1/dev/admin)
- * - Projects (/api/v1/projects, /api/v1/projects/{slug})
- * - Case Studies (/api/v1/case-studies, /api/v1/case-studies/{slug})
- * - Services (/api/v1/services, /api/v1/services/{slug})
- * - Solutions (/api/v1/solutions, /api/v1/solutions/{slug})
- * - Leads (/api/v1/leads)
- * - Admin Projects (/api/v1/admin/projects...)
- * - Admin Services (/api/v1/admin/services...)
- * - Admin Solutions (/api/v1/admin/solutions...)
- * - Admin Case Studies (/api/v1/admin/case-studies...)
- * - Admin Leads (/api/v1/admin/leads...)
- * - Admin Files (/api/v1/admin/files...)
- */
+/** Small, cookie-authenticated client for the Beezents FastAPI backend. */
 
-export const DEFAULT_API_BASE_URL = 'http://192.168.0.109:8000';
+export const DEFAULT_API_BASE_URL = 'http://localhost:8000';
 export const API_BASE_STORAGE_KEY = 'beezent_api_base_url';
+// Kept as an export for callers from older UI code. Sessions are cookies now.
 export const API_TOKEN_STORAGE_KEY = 'beezent_api_auth_token';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
   status: number;
 }
 
-export interface HealthResponse {
-  status: string;
-  timestamp?: string;
-  version?: string;
-  environment?: string;
-  database?: string;
-  [key: string]: any;
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
 }
 
-export interface AuthLoginResponse {
-  token?: string;
-  access_token?: string;
-  token_type?: string;
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    role?: string;
-    [key: string]: any;
-  };
-  [key: string]: any;
+export interface HealthResponse {
+  status: string;
+  [key: string]: unknown;
 }
+
+export interface UserResponse {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'user' | 'client' | 'staff' | 'admin';
+  is_active: boolean;
+  last_login_at: string | null;
+}
+
+export interface LeadCreateResponse {
+  id: string;
+  message: string;
+}
+
+export interface MediaAdminResponse {
+  id: string;
+  original_name: string;
+  storage_key: string;
+  public_url: string;
+  mime_type: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  alt_text: string | null;
+  folder: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type QueryParams = Record<string, string | number | boolean | undefined | null>;
+
+const queryString = (params?: QueryParams) => {
+  if (!params) return '';
+  const values = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+  return values.length ? `?${new URLSearchParams(values.map(([key, value]) => [key, String(value)]))}` : '';
+};
+
+const errorMessage = (data: unknown, response: Response) => {
+  if (typeof data === 'object' && data !== null && 'detail' in data) {
+    const detail = (data as { detail?: unknown }).detail;
+    if (Array.isArray(detail)) {
+      return detail.map(item => (typeof item === 'object' && item !== null && 'msg' in item ? String(item.msg) : String(item))).join(', ');
+    }
+    if (detail) return String(detail);
+  }
+  return `Request failed with status ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`;
+};
 
 export class ApiClient {
   private baseUrl: string;
-  private token: string | null = null;
 
   constructor() {
     this.baseUrl = this.getInitialBaseUrl();
-    this.token = this.getInitialToken();
   }
 
-  private getInitialBaseUrl(): string {
+  private sanitizeUrl(url: string) {
+    return url.trim().replace(/\/$/, '');
+  }
+
+  private getInitialBaseUrl() {
+    const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env || {} as Record<string, string>;
+    const envUrl = env.VITE_API_BASE_URL;
+    // A configured dev proxy must win over an old absolute URL saved by the CMS.
+    if (env.VITE_API_PROXY_TARGET && envUrl?.startsWith('/')) return this.sanitizeUrl(envUrl);
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(API_BASE_STORAGE_KEY);
-      if (stored && stored.trim()) {
-        return this.sanitizeUrl(stored.trim());
-      }
+      const stored = window.localStorage.getItem(API_BASE_STORAGE_KEY);
+      if (stored) return this.sanitizeUrl(stored);
     }
-    const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
-    if (envUrl && typeof envUrl === 'string') {
-      return this.sanitizeUrl(envUrl);
-    }
-    return DEFAULT_API_BASE_URL;
+    return this.sanitizeUrl(envUrl || DEFAULT_API_BASE_URL);
   }
 
-  private getInitialToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(API_TOKEN_STORAGE_KEY) || null;
-    }
-    return null;
+  public getBaseUrl() { return this.baseUrl; }
+
+  public setBaseUrl(url: string) {
+    this.baseUrl = this.sanitizeUrl(url || DEFAULT_API_BASE_URL);
+    if (typeof window !== 'undefined') window.localStorage.setItem(API_BASE_STORAGE_KEY, this.baseUrl);
   }
 
-  private sanitizeUrl(url: string): string {
-    return url.endsWith('/') ? url.slice(0, -1) : url;
-  }
-
-  public getBaseUrl(): string {
+  public resetBaseUrl() {
+    const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env || {} as Record<string, string>;
+    this.setBaseUrl(env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL);
     return this.baseUrl;
   }
 
-  public setBaseUrl(url: string): void {
-    const cleanUrl = this.sanitizeUrl(url.trim() || DEFAULT_API_BASE_URL);
-    this.baseUrl = cleanUrl;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(API_BASE_STORAGE_KEY, cleanUrl);
-    }
-  }
+  // Compatibility no-ops: FastAPI authenticates with an HttpOnly cookie.
+  public getToken() { return null; }
+  public setToken(_token: string | null) { return; }
 
-  public resetBaseUrl(): string {
-    this.setBaseUrl(DEFAULT_API_BASE_URL);
-    return DEFAULT_API_BASE_URL;
-  }
-
-  public getToken(): string | null {
-    return this.token;
-  }
-
-  public setToken(token: string | null): void {
-    this.token = token;
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem(API_TOKEN_STORAGE_KEY, token);
-      } else {
-        localStorage.removeItem(API_TOKEN_STORAGE_KEY);
-      }
-    }
-  }
-
-  /**
-   * Internal HTTP request dispatcher with timeout and bearer auth headers
-   */
-  private async request<T = any>(
-    path: string,
-    options: {
-      method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-      body?: any;
-      headers?: Record<string, string>;
-      timeoutMs?: number;
-      isFormData?: boolean;
-    } = {}
-  ): Promise<ApiResponse<T>> {
-    const { method = 'GET', body, headers = {}, timeoutMs = 8000, isFormData = false } = options;
+  /** Public for the diagnostics screen and all typed endpoint methods. */
+  public async request<T = unknown>(path: string, options: {
+    method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+    body?: unknown;
+    headers?: Record<string, string>;
+    timeoutMs?: number;
+    isFormData?: boolean;
+  } = {}): Promise<ApiResponse<T>> {
+    const { method = 'GET', body, headers = {}, timeoutMs = 15000, isFormData = false } = options;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-    const fullUrl = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
-
-    const reqHeaders: Record<string, string> = { ...headers };
-
-    if (!isFormData && body && !reqHeaders['Content-Type']) {
-      reqHeaders['Content-Type'] = 'application/json';
-    }
-
-    if (this.token && !reqHeaders['Authorization']) {
-      reqHeaders['Authorization'] = `Bearer ${this.token}`;
-    }
+    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const requestHeaders = { ...headers };
+    if (body && !isFormData && !requestHeaders['Content-Type']) requestHeaders['Content-Type'] = 'application/json';
 
     try {
-      const response = await fetch(fullUrl, {
+      const response = await fetch(url, {
         method,
-        headers: reqHeaders,
-        body: isFormData ? body : body ? JSON.stringify(body) : undefined,
+        headers: requestHeaders,
+        credentials: 'include',
+        body: isFormData ? body as BodyInit : body === undefined ? undefined : JSON.stringify(body),
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
 
-      let data: any = null;
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        try {
-          data = await response.json();
-        } catch {
-          data = null;
-        }
-      } else {
-        try {
-          data = await response.text();
-        } catch {
-          data = null;
-        }
+      let data: unknown = null;
+      if (response.status !== 204) {
+        const contentType = response.headers.get('content-type') || '';
+        data = contentType.includes('json') ? await response.json().catch(() => null) : await response.text().catch(() => null);
       }
-
-      if (!response.ok) {
-        const errorMsg =
-          (data && (data.detail || data.message || data.error)) ||
-          `Request failed with status ${response.status} (${response.statusText})`;
-        return {
-          success: false,
-          error: errorMsg,
-          data,
-          status: response.status,
-        };
-      }
-
-      return {
-        success: true,
-        data,
-        status: response.status,
-      };
-    } catch (err: any) {
+      if (!response.ok) return { success: false, error: errorMessage(data, response), data: data as T, status: response.status };
+      return { success: true, data: data as T, status: response.status };
+    } catch (error) {
       clearTimeout(timeoutId);
-      const isAbort = err.name === 'AbortError';
-      const isFailedFetch = err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError');
-
-      let errorMsg = err.message || 'Unknown network error occurred';
-      if (isAbort) {
-        errorMsg = `Connection timed out after ${timeoutMs}ms trying to reach ${fullUrl}`;
-      } else if (isFailedFetch) {
-        errorMsg = `Unable to connect to ${fullUrl}. Ensure your backend server is active at ${this.baseUrl} and CORS is allowed.`;
-      }
-
-      return {
-        success: false,
-        error: errorMsg,
-        status: 0,
-      };
+      const message = error instanceof DOMException && error.name === 'AbortError'
+        ? `Connection timed out while reaching ${url}`
+        : `Unable to connect to ${this.baseUrl}. Ensure the backend is running and CORS allows this frontend origin.`;
+      return { success: false, error: message, status: 0 };
     }
   }
 
-  // ==========================================
-  // 1. HEALTH ENDPOINTS
-  // ==========================================
+  public getRootHealth() { return this.request<HealthResponse>('/health'); }
+  public getHealth() { return this.request<HealthResponse>('/api/v1/health'); }
+  public getDbHealth() { return this.request<HealthResponse>('/api/v1/health/db'); }
 
-  /** GET /api/v1/health - System API Health */
-  public async getHealth(): Promise<ApiResponse<HealthResponse>> {
-    return this.request<HealthResponse>('/api/v1/health');
+  public register(payload: { email: string; password: string; full_name: string }) {
+    return this.request<UserResponse>('/api/v1/auth/register', { method: 'POST', body: payload });
   }
 
-  /** GET /api/v1/health/db - Database Connectivity Health */
-  public async getDbHealth(): Promise<ApiResponse<HealthResponse>> {
-    return this.request<HealthResponse>('/api/v1/health/db');
+  public login(credentials: { email: string; password: string }) {
+    return this.request<UserResponse>('/api/v1/auth/login', { method: 'POST', body: credentials });
   }
 
-  /** GET /health - Root Health */
-  public async getRootHealth(): Promise<ApiResponse<HealthResponse>> {
-    return this.request<HealthResponse>('/health');
+  public logout() { return this.request('/api/v1/auth/logout', { method: 'POST' }); }
+  public getMe() { return this.request<UserResponse>('/api/v1/auth/me'); }
+  public getDevStaff() { return this.request('/api/v1/dev/staff'); }
+  public getDevAdmin() { return this.request('/api/v1/dev/admin'); }
+
+  public getProjects(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/projects${queryString(params)}`); }
+  public getProjectBySlug(slug: string) { return this.request<unknown>(`/api/v1/projects/${encodeURIComponent(slug)}`); }
+  public getCaseStudies(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/case-studies${queryString(params)}`); }
+  public getCaseStudyBySlug(slug: string) { return this.request<unknown>(`/api/v1/case-studies/${encodeURIComponent(slug)}`); }
+  public getServices(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/services${queryString(params)}`); }
+  public getServiceBySlug(slug: string) { return this.request<unknown>(`/api/v1/services/${encodeURIComponent(slug)}`); }
+  public getSolutions(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/solutions${queryString(params)}`); }
+  public getSolutionBySlug(slug: string) { return this.request<unknown>(`/api/v1/solutions/${encodeURIComponent(slug)}`); }
+
+  public createLead(lead: { name: string; email: string; phone?: string; company?: string; service?: string; message: string; source?: string }) {
+    return this.request<LeadCreateResponse>('/api/v1/leads', { method: 'POST', body: lead });
   }
 
-  // ==========================================
-  // 2. AUTH ENDPOINTS
-  // ==========================================
+  public listAdminProjects(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/projects${queryString(params)}`); }
+  public createAdminProject(data: unknown) { return this.request<unknown>('/api/v1/admin/projects', { method: 'POST', body: data }); }
+  public getAdminProject(id: string) { return this.request<unknown>(`/api/v1/admin/projects/${encodeURIComponent(id)}`); }
+  public updateAdminProject(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/projects/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminProject(id: string) { return this.request(`/api/v1/admin/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
-  /** POST /api/v1/auth/register - Register new administrator/user */
-  public async register(payload: {
-    email: string;
-    password: string;
-    name?: string;
-    role?: string;
-    [key: string]: any;
-  }): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/auth/register', {
-      method: 'POST',
-      body: payload,
-    });
-  }
+  public listAdminServices(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/services${queryString(params)}`); }
+  public createAdminService(data: unknown) { return this.request<unknown>('/api/v1/admin/services', { method: 'POST', body: data }); }
+  public getAdminService(id: string) { return this.request<unknown>(`/api/v1/admin/services/${encodeURIComponent(id)}`); }
+  public updateAdminService(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/services/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminService(id: string) { return this.request(`/api/v1/admin/services/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
-  /** POST /api/v1/auth/login - Authenticate with credentials */
-  public async login(credentials: {
-    email: string;
-    password: string;
-  }): Promise<ApiResponse<AuthLoginResponse>> {
-    const res = await this.request<AuthLoginResponse>('/api/v1/auth/login', {
-      method: 'POST',
-      body: credentials,
-    });
+  public listAdminSolutions(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/solutions${queryString(params)}`); }
+  public createAdminSolution(data: unknown) { return this.request<unknown>('/api/v1/admin/solutions', { method: 'POST', body: data }); }
+  public getAdminSolution(id: string) { return this.request<unknown>(`/api/v1/admin/solutions/${encodeURIComponent(id)}`); }
+  public updateAdminSolution(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/solutions/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminSolution(id: string) { return this.request(`/api/v1/admin/solutions/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
-    if (res.success && res.data) {
-      const token = res.data.token || res.data.access_token;
-      if (token) {
-        this.setToken(token);
-      }
+  public listAdminCaseStudies(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/case-studies${queryString(params)}`); }
+  public createAdminCaseStudy(data: unknown) { return this.request<unknown>('/api/v1/admin/case-studies', { method: 'POST', body: data }); }
+  public getAdminCaseStudy(id: string) { return this.request<unknown>(`/api/v1/admin/case-studies/${encodeURIComponent(id)}`); }
+  public updateAdminCaseStudy(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/case-studies/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminCaseStudy(id: string) { return this.request(`/api/v1/admin/case-studies/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  public listAdminLeads(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/leads${queryString(params)}`); }
+  public getAdminLead(id: string) { return this.request<unknown>(`/api/v1/admin/leads/${encodeURIComponent(id)}`); }
+  public updateAdminLead(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/leads/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminLead(id: string) { return this.request(`/api/v1/admin/leads/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  public listAdminFiles(params?: QueryParams) { return this.request<PaginatedResponse<MediaAdminResponse>>(`/api/v1/admin/files${queryString(params)}`); }
+  public uploadAdminFile(file: File | FormData, folder?: string, altText?: string) {
+    const form = file instanceof FormData ? file : new FormData();
+    if (!(file instanceof FormData)) {
+      form.append('file', file);
+      if (folder) form.append('folder', folder);
+      if (altText) form.append('alt_text', altText);
     }
-
-    return res;
+    return this.request<unknown>('/api/v1/admin/files', { method: 'POST', body: form, isFormData: true });
   }
-
-  /** POST /api/v1/auth/logout - Invalidate current session */
-  public async logout(): Promise<ApiResponse<any>> {
-    const res = await this.request('/api/v1/auth/logout', {
-      method: 'POST',
-    });
-    this.setToken(null);
-    return res;
-  }
-
-  /** GET /api/v1/auth/me - Current authenticated user */
-  public async getMe(): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/auth/me');
-  }
-
-  // ==========================================
-  // 3. DEVELOPMENT ROLE ENDPOINTS
-  // ==========================================
-
-  /** GET /api/v1/dev/staff - Staff Only Diagnostic Check */
-  public async getDevStaff(): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/dev/staff');
-  }
-
-  /** GET /api/v1/dev/admin - Admin Only Diagnostic Check */
-  public async getDevAdmin(): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/dev/admin');
-  }
-
-  // ==========================================
-  // 4. PUBLIC PROJECTS
-  // ==========================================
-
-  /** GET /api/v1/projects - List Projects */
-  public async getProjects(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return this.request<any[]>(`/api/v1/projects${query}`);
-  }
-
-  /** GET /api/v1/projects/{slug} - Get Project by slug */
-  public async getProjectBySlug(slug: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/projects/${encodeURIComponent(slug)}`);
-  }
-
-  // ==========================================
-  // 5. PUBLIC CASE STUDIES
-  // ==========================================
-
-  /** GET /api/v1/case-studies - List Case Studies */
-  public async getCaseStudies(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return this.request<any[]>(`/api/v1/case-studies${query}`);
-  }
-
-  /** GET /api/v1/case-studies/{slug} - Get Case Study by slug */
-  public async getCaseStudyBySlug(slug: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/case-studies/${encodeURIComponent(slug)}`);
-  }
-
-  // ==========================================
-  // 6. PUBLIC SERVICES
-  // ==========================================
-
-  /** GET /api/v1/services - List Services */
-  public async getServices(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return this.request<any[]>(`/api/v1/services${query}`);
-  }
-
-  /** GET /api/v1/services/{slug} - Get Service by slug */
-  public async getServiceBySlug(slug: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/services/${encodeURIComponent(slug)}`);
-  }
-
-  // ==========================================
-  // 7. PUBLIC SOLUTIONS
-  // ==========================================
-
-  /** GET /api/v1/solutions - List Solutions */
-  public async getSolutions(params?: Record<string, string>): Promise<ApiResponse<any[]>> {
-    const query = params ? `?${new URLSearchParams(params).toString()}` : '';
-    return this.request<any[]>(`/api/v1/solutions${query}`);
-  }
-
-  /** GET /api/v1/solutions/{slug} - Get Solution by slug */
-  public async getSolutionBySlug(slug: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/solutions/${encodeURIComponent(slug)}`);
-  }
-
-  // ==========================================
-  // 8. LEADS
-  // ==========================================
-
-  /** POST /api/v1/leads - Create Lead / Inquiry */
-  public async createLead(leadData: {
-    name: string;
-    email: string;
-    company?: string;
-    phone?: string;
-    projectType?: string;
-    budgetRange?: string;
-    message: string;
-    [key: string]: any;
-  }): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/leads', {
-      method: 'POST',
-      body: leadData,
-    });
-  }
-
-  // ==========================================
-  // 9. ADMIN PROJECTS
-  // ==========================================
-
-  /** GET /api/v1/admin/projects - List Projects (Admin) */
-  public async listAdminProjects(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/projects');
-  }
-
-  /** POST /api/v1/admin/projects - Create Project (Admin) */
-  public async createAdminProject(data: any): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/admin/projects', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  /** GET /api/v1/admin/projects/{project_id} - Get Project (Admin) */
-  public async getAdminProject(projectId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/projects/${encodeURIComponent(projectId)}`);
-  }
-
-  /** PATCH /api/v1/admin/projects/{project_id} - Update Project (Admin) */
-  public async updateAdminProject(projectId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/projects/${encodeURIComponent(projectId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/projects/{project_id} - Delete Project (Admin) */
-  public async deleteAdminProject(projectId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/projects/${encodeURIComponent(projectId)}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ==========================================
-  // 10. ADMIN SERVICES
-  // ==========================================
-
-  /** GET /api/v1/admin/services - List Services (Admin) */
-  public async listAdminServices(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/services');
-  }
-
-  /** POST /api/v1/admin/services - Create Service (Admin) */
-  public async createAdminService(data: any): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/admin/services', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  /** GET /api/v1/admin/services/{service_id} - Get Service (Admin) */
-  public async getAdminService(serviceId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/services/${encodeURIComponent(serviceId)}`);
-  }
-
-  /** PATCH /api/v1/admin/services/{service_id} - Update Service (Admin) */
-  public async updateAdminService(serviceId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/services/${encodeURIComponent(serviceId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/services/{service_id} - Delete Service (Admin) */
-  public async deleteAdminService(serviceId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/services/${encodeURIComponent(serviceId)}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ==========================================
-  // 11. ADMIN SOLUTIONS
-  // ==========================================
-
-  /** GET /api/v1/admin/solutions - List Solutions (Admin) */
-  public async listAdminSolutions(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/solutions');
-  }
-
-  /** POST /api/v1/admin/solutions - Create Solution (Admin) */
-  public async createAdminSolution(data: any): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/admin/solutions', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  /** GET /api/v1/admin/solutions/{solution_id} - Get Solution (Admin) */
-  public async getAdminSolution(solutionId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/solutions/${encodeURIComponent(solutionId)}`);
-  }
-
-  /** PATCH /api/v1/admin/solutions/{solution_id} - Update Solution (Admin) */
-  public async updateAdminSolution(solutionId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/solutions/${encodeURIComponent(solutionId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/solutions/{solution_id} - Delete Solution (Admin) */
-  public async deleteAdminSolution(solutionId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/solutions/${encodeURIComponent(solutionId)}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ==========================================
-  // 12. ADMIN CASE STUDIES
-  // ==========================================
-
-  /** GET /api/v1/admin/case-studies - List Case Studies (Admin) */
-  public async listAdminCaseStudies(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/case-studies');
-  }
-
-  /** POST /api/v1/admin/case-studies - Create Case Study (Admin) */
-  public async createAdminCaseStudy(data: any): Promise<ApiResponse<any>> {
-    return this.request('/api/v1/admin/case-studies', {
-      method: 'POST',
-      body: data,
-    });
-  }
-
-  /** GET /api/v1/admin/case-studies/{case_study_id} - Get Case Study (Admin) */
-  public async getAdminCaseStudy(caseStudyId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/case-studies/${encodeURIComponent(caseStudyId)}`);
-  }
-
-  /** PATCH /api/v1/admin/case-studies/{case_study_id} - Update Case Study (Admin) */
-  public async updateAdminCaseStudy(caseStudyId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/case-studies/${encodeURIComponent(caseStudyId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/case-studies/{case_study_id} - Delete Case Study (Admin) */
-  public async deleteAdminCaseStudy(caseStudyId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/case-studies/${encodeURIComponent(caseStudyId)}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ==========================================
-  // 13. ADMIN LEADS
-  // ==========================================
-
-  /** GET /api/v1/admin/leads - List Leads (Admin) */
-  public async listAdminLeads(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/leads');
-  }
-
-  /** GET /api/v1/admin/leads/{lead_id} - Get Lead (Admin) */
-  public async getAdminLead(leadId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/leads/${encodeURIComponent(leadId)}`);
-  }
-
-  /** PATCH /api/v1/admin/leads/{lead_id} - Update Lead (Admin) */
-  public async updateAdminLead(leadId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/leads/${encodeURIComponent(leadId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/leads/{lead_id} - Delete Lead (Admin) */
-  public async deleteAdminLead(leadId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/leads/${encodeURIComponent(leadId)}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ==========================================
-  // 14. ADMIN FILES / MEDIA
-  // ==========================================
-
-  /** GET /api/v1/admin/files - List Media Files (Admin) */
-  public async listAdminFiles(): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>('/api/v1/admin/files');
-  }
-
-  /** POST /api/v1/admin/files - Upload Media File (Admin) */
-  public async uploadAdminFile(formDataOrFile: FormData | File, alt?: string): Promise<ApiResponse<any>> {
-    let body: FormData;
-    if (formDataOrFile instanceof FormData) {
-      body = formDataOrFile;
-    } else {
-      body = new FormData();
-      body.append('file', formDataOrFile);
-      if (alt) {
-        body.append('alt', alt);
-      }
-    }
-
-    return this.request('/api/v1/admin/files', {
-      method: 'POST',
-      body,
-      isFormData: true,
-    });
-  }
-
-  /** GET /api/v1/admin/files/{media_id} - Get Media File (Admin) */
-  public async getAdminFile(mediaId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/files/${encodeURIComponent(mediaId)}`);
-  }
-
-  /** PATCH /api/v1/admin/files/{media_id} - Update Media File (Admin) */
-  public async updateAdminFile(mediaId: string, data: any): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/files/${encodeURIComponent(mediaId)}`, {
-      method: 'PATCH',
-      body: data,
-    });
-  }
-
-  /** DELETE /api/v1/admin/files/{media_id} - Delete Media File (Admin) */
-  public async deleteAdminFile(mediaId: string): Promise<ApiResponse<any>> {
-    return this.request(`/api/v1/admin/files/${encodeURIComponent(mediaId)}`, {
-      method: 'DELETE',
-    });
-  }
+  public getAdminFile(id: string) { return this.request<unknown>(`/api/v1/admin/files/${encodeURIComponent(id)}`); }
+  public updateAdminFile(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/files/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminFile(id: string) { return this.request(`/api/v1/admin/files/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 }
 
-// Singleton API instance export
 export const api = new ApiClient();

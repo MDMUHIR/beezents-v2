@@ -66,12 +66,11 @@ const ENDPOINTS: EndpointDef[] = [
     method: 'POST',
     path: '/api/v1/auth/register',
     name: 'Register',
-    description: 'Register a new administrator or editor account',
+    description: 'Register a user account; new accounts always receive the user role',
     defaultPayload: {
-      email: 'alex.chen@beezent.ai',
-      password: 'SecurePassword123!',
-      name: 'Alex Chen',
-      role: 'ADMIN',
+      email: 'user@example.com',
+      password: 'strongpass123',
+      full_name: 'Jane Doe',
     },
   },
   {
@@ -80,10 +79,10 @@ const ENDPOINTS: EndpointDef[] = [
     method: 'POST',
     path: '/api/v1/auth/login',
     name: 'Login',
-    description: 'Authenticate with email & password to retrieve JWT bearer token',
+    description: 'Authenticate with email and password; the server sets an HTTP-only session cookie',
     defaultPayload: {
-      email: 'admin@beezent.ai',
-      password: 'admin',
+      email: 'MBadmin@beezents.com',
+      password: 'Bee@MB',
     },
   },
   {
@@ -210,8 +209,8 @@ const ENDPOINTS: EndpointDef[] = [
       email: 's.jenkins@meridian-capital.io',
       company: 'Meridian Capital Partners',
       phone: '+1 (555) 234-8901',
-      projectType: 'AI Agents',
-      budgetRange: '$50k - $100k',
+       service: 'AI Agents',
+       source: 'website',
       message: 'Looking to deploy deterministic multi-agent pipeline for autonomous financial audit review.',
     },
   },
@@ -508,7 +507,7 @@ const ENDPOINTS: EndpointDef[] = [
     name: 'Update Lead',
     description: 'Update lead status or pipeline state',
     defaultParams: { lead_id: 'inq-1' },
-    defaultPayload: { status: 'Contacted' },
+     defaultPayload: { status: 'contacted' },
   },
   {
     id: 'admin-leads-delete',
@@ -535,14 +534,7 @@ const ENDPOINTS: EndpointDef[] = [
     method: 'POST',
     path: '/api/v1/admin/files',
     name: 'Upload Media',
-    description: 'Upload new media asset to backend CDN storage',
-    defaultPayload: {
-      name: 'architecture_diagram.png',
-      alt: 'System DAG flowchart',
-      type: 'image/png',
-      size: '1.2 MB',
-      url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-    },
+     description: 'Upload media using multipart form data with file, folder, and alt_text fields',
   },
   {
     id: 'admin-files-get',
@@ -561,7 +553,7 @@ const ENDPOINTS: EndpointDef[] = [
     name: 'Update Media',
     description: 'Update media alt text or naming',
     defaultParams: { media_id: 'med-1' },
-    defaultPayload: { alt: 'Updated accessible description' },
+     defaultPayload: { alt_text: 'Updated accessible description' },
   },
   {
     id: 'admin-files-delete',
@@ -797,7 +789,7 @@ export const AdminApiExplorerModal: React.FC<{ isOpen: boolean; onClose: () => v
               value={tempBaseUrl}
               onChange={e => setTempBaseUrl(e.target.value)}
               className="flex-1 font-mono text-xs px-3 py-1.5 bg-white rounded-lg border border-slate-300 focus:border-[#0282EB] focus:ring-1 focus:ring-[#0282EB] outline-hidden"
-              placeholder="http://192.168.0.109:8000"
+              placeholder="http://localhost:8000"
             />
             <button
               type="submit"
@@ -812,7 +804,7 @@ export const AdminApiExplorerModal: React.FC<{ isOpen: boolean; onClose: () => v
                 setTempBaseUrl(def);
               }}
               className="px-2.5 py-1.5 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-lg font-medium transition-colors"
-              title="Reset to default http://192.168.0.109:8000"
+               title="Reset to default backend URL"
             >
               Default
             </button>
@@ -1081,7 +1073,7 @@ export const AdminApiExplorerModal: React.FC<{ isOpen: boolean; onClose: () => v
               <div className="space-y-1">
                 <span className="font-bold text-slate-900">Local Network API Access Note:</span>
                 <p className="text-[11px] leading-relaxed">
-                  Your configured backend is at <code className="font-mono text-blue-700">http://192.168.0.109:8000/</code>. When viewing this app in your local browser, your browser can directly connect to your local LAN server. Ensure your backend server (FastAPI, Express, Django) has <strong>CORS enabled</strong> (e.g., allow origins <code>*</code> or this applet's URL). If your browser blocks Mixed Content (HTTP on an HTTPS tab), you can test in a local environment or provide an ngrok tunnel.
+                   The frontend uses cookie credentials, so configure FastAPI CORS with this frontend origin and <code>allow_credentials=true</code>. Use HTTPS for production to keep the session cookie secure.
                 </p>
               </div>
             </div>

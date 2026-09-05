@@ -6,7 +6,6 @@ import {
   BookOpen,
   Cpu,
   Sparkles,
-  FileText,
   Mail,
   ArrowRight,
   TrendingUp,
@@ -24,8 +23,7 @@ export const AdminDashboard: React.FC = () => {
     getProjects,
     getCaseStudies,
     getServices,
-    getSolutions,
-    getBlogPosts
+    getSolutions
   } = useDatabase();
 
   const inquiries = getInquiries();
@@ -33,7 +31,6 @@ export const AdminDashboard: React.FC = () => {
   const caseStudies = getCaseStudies(true);
   const services = getServices(true);
   const solutions = getSolutions(true);
-  const blogPosts = getBlogPosts(true);
 
   const newInquiries = inquiries.filter(i => i.status === 'New');
   const recentInquiries = inquiries.slice(0, 5);
@@ -74,13 +71,6 @@ export const AdminDashboard: React.FC = () => {
       sub: 'Pre-engineered systems',
       icon: <Sparkles className="w-5 h-5" />,
       href: '/admin/solutions',
-    },
-    {
-      title: 'Publications',
-      value: blogPosts.length,
-      sub: 'Engineering articles',
-      icon: <FileText className="w-5 h-5" />,
-      href: '/admin/blog',
     },
   ];
 
@@ -226,17 +216,6 @@ export const AdminDashboard: React.FC = () => {
                 <div className="flex items-center gap-2.5">
                   <BookOpen className="w-4 h-4 text-[#0282EB]" />
                   <span>Add Case Study</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-              </Link>
-
-              <Link
-                href="/admin/blog"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200 text-xs font-semibold text-slate-800 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-[#0282EB]" />
-                  <span>Publish New Article</span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               </Link>
