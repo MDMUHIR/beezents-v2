@@ -56,14 +56,16 @@ function MagneticButton({
 
 export const Navbar: React.FC = () => {
   const { path, navigate } = useRouter();
-  const { auth, getSolutionCategories, getServiceCategories } = useDatabase();
+  const { auth, getSolutionCategories, getServiceCategories, getProjectCategories } = useDatabase();
   const { openDemo } = useModals();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesDropdown, setServicesDropdown] = useState(false);
   const [solutionsDropdown, setSolutionsDropdown] = useState(false);
+  const [projectsDropdown, setProjectsDropdown] = useState(false);
   const solutionCategories = getSolutionCategories();
   const serviceCategories = getServiceCategories();
+  const projectCategories = getProjectCategories();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -78,6 +80,7 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false);
     setServicesDropdown(false);
     setSolutionsDropdown(false);
+    setProjectsDropdown(false);
   }, [path]);
 
   const navItems = [
@@ -98,6 +101,15 @@ export const Navbar: React.FC = () => {
       subItems: solutionCategories.map(category => ({
         label: category.name,
         href: `/solutions/category/${category.slug}`,
+      })),
+    },
+    {
+      label: "Projects",
+      href: "/projects",
+      hasDropdown: true,
+      subItems: projectCategories.map(category => ({
+        label: category.name,
+        href: `/projects/category/${category.slug}`,
       })),
     },
     { label: "Case Studies", href: "/case-studies" },
@@ -161,14 +173,10 @@ export const Navbar: React.FC = () => {
             const active = isActive(item.href);
 
             if (item.hasDropdown) {
-              const isDropdownOpen =
-                item.label === "Services"
-                  ? servicesDropdown
-                  : solutionsDropdown;
-              const setDropdown =
-                item.label === "Services"
-                  ? setServicesDropdown
-                  : setSolutionsDropdown;
+                const isDropdownOpen =
+                item.label === "Services" ? servicesDropdown : item.label === "Solutions" ? solutionsDropdown : projectsDropdown;
+                const setDropdown =
+                item.label === "Services" ? setServicesDropdown : item.label === "Solutions" ? setSolutionsDropdown : setProjectsDropdown;
 
               return (
                 <div
@@ -286,6 +294,7 @@ export const Navbar: React.FC = () => {
                     if (item.hasDropdown) {
                       e.preventDefault();
                       if (item.label === "Solutions") setSolutionsDropdown(open => !open);
+                      else if (item.label === "Projects") setProjectsDropdown(open => !open);
                       else setServicesDropdown(open => !open);
                     } else {
                       handleNavClick(e, item.href);
@@ -301,7 +310,7 @@ export const Navbar: React.FC = () => {
                   <span>{item.label}</span>
                   {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
                 </a>
-                {item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : servicesDropdown)) && (
+                {item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : item.label === "Projects" ? projectsDropdown : servicesDropdown)) && (
                   <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
                     {item.subItems?.map(sub => (
                       <a

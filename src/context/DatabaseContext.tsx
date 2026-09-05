@@ -14,7 +14,10 @@ import {
   UserRole,
   ProjectType,
   SolutionCategory,
-  ServiceCategory
+  ServiceCategory,
+  ProjectCategory,
+  TeamMember,
+  TeamMemberCategory
 } from '../types';
 import { initialDatabase } from '../data/seedData';
 import { api } from '../api';
@@ -62,6 +65,17 @@ interface DatabaseContextType {
   createServiceCategory: (data: Omit<ServiceCategory, 'id' | 'services'>) => Promise<ServiceCategory | undefined>;
   updateServiceCategory: (id: string, data: Partial<Omit<ServiceCategory, 'id' | 'services'>>) => Promise<ServiceCategory | undefined>;
   deleteServiceCategory: (id: string) => Promise<boolean>;
+  getProjectCategories: () => ProjectCategory[];
+  loadProjectCategoryBySlug: (slug: string) => Promise<ProjectCategory | undefined>;
+  createProjectCategory: (data: Omit<ProjectCategory, 'id' | 'projects'>) => Promise<ProjectCategory | undefined>;
+  updateProjectCategory: (id: string, data: Partial<Omit<ProjectCategory, 'id' | 'projects'>>) => Promise<ProjectCategory | undefined>;
+  deleteProjectCategory: (id: string) => Promise<boolean>;
+  getTeamMembers: (includeDrafts?: boolean) => TeamMember[];
+  getTeamMemberBySlug: (slug: string) => TeamMember | undefined;
+  loadTeamMemberBySlug: (slug: string) => Promise<TeamMember | undefined>;
+  createTeamMember: (data: Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>) => TeamMember;
+  updateTeamMember: (id: string, data: Partial<TeamMember>) => void;
+  deleteTeamMember: (id: string) => void;
 
   // Services
   getServices: (includeDrafts?: boolean) => Service[];
@@ -173,6 +187,34 @@ const normalizeServiceCategory = (raw: unknown): ServiceCategory => {
     services: Array.isArray(value(item, 'services')) ? list(item, 'services').map(normalizeService) : undefined,
   };
 };
+const normalizeProjectCategory = (raw: unknown): ProjectCategory => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''),
+    name: String(value(item, 'name') || ''),
+    slug: String(value(item, 'slug') || ''),
+    description: value(item, 'description') || '',
+    sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0),
+    projects: Array.isArray(value(item, 'projects')) ? list(item, 'projects').map(normalizeProject) : undefined,
+  };
+};
+const normalizeTeamMember = (raw: unknown): TeamMember => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''),
+    name: String(value(item, 'name') || ''),
+    slug: String(value(item, 'slug') || ''),
+    role: String(value(item, 'role') || ''),
+    bio: value(item, 'bio') || undefined,
+    avatarUrl: assetUrl(value(item, 'avatar_url', 'avatarUrl')) || undefined,
+    category: String(value(item, 'category') || 'talent') as TeamMemberCategory,
+    featured: Boolean(value(item, 'featured') || false),
+    sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0),
+    status: contentStatus(item),
+    createdAt: iso(item, 'created_at', 'createdAt'),
+    updatedAt: iso(item, 'updated_at', 'updatedAt'),
+  };
+};
 const assetUrl = (raw: unknown) => {
   const url = String(raw || '');
   return url.startsWith('/') ? `${api.getBaseUrl()}${url}` : url;
@@ -249,9 +291,17 @@ const normalizeSolution = (raw: unknown): Solution => {
 };
 const normalizeProject = (raw: unknown): Project => {
   const item = record(raw);
+  const nestedCategories = list(item, 'categories').map(normalizeProjectCategory);
+  const categoryValue = value(item, 'category');
+  const categoryObject = record(categoryValue);
+  const categoryName = nestedCategories[0]?.name || (typeof categoryValue === 'object' && categoryValue !== null
+    ? String(value(categoryObject, 'name', 'title', 'slug') || '')
+    : String(categoryValue || value(item, 'category_name') || ''));
+  const categorySlug = nestedCategories[0]?.slug || String(value(item, 'category_slug') || value(categoryObject, 'slug') || (categoryName ? slugify(categoryName) : ''));
+  const categoryIds = nestedCategories.map(category => category.id).filter(Boolean);
   const description = String(value(item, 'description', 'full_description', 'fullDescription', 'overview') || '');
   return {
-    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: description,
+    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: description, category: categoryName, categorySlug, categoryId: categoryIds[0] || String(value(item, 'category_id') || value(categoryObject, 'id') || '') || undefined, categoryIds, categories: nestedCategories,
     projectType: String(value(item, 'project_type', 'projectType') || 'Other') as ProjectType, industry: String(value(item, 'industry') || ''), client: value(item, 'client_name', 'clientName', 'client'), clientName: value(item, 'client_name', 'clientName', 'client'), timeline: value(item, 'timeline'),
     coverImage: assetUrl(value(item, 'cover_image', 'coverImage')), gallery: list(item, 'gallery').map(assetUrl), technologies: list(item, 'technologies'), servicesUsed: list(item, 'services_used', 'servicesUsed'), features: list(item, 'features'), projectUrl: value(item, 'project_url', 'projectUrl'), liveUrl: value(item, 'live_url', 'liveUrl'), githubUrl: value(item, 'github_url', 'githubUrl'), completionDate: String(value(item, 'completion_date', 'completionDate') || ''), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), overview: String(value(item, 'overview') || description), challenge: String(value(item, 'challenge') || ''), solution: String(value(item, 'solution') || ''), implementation: String(value(item, 'implementation') || ''), results: list(item, 'results'), relatedServiceIds: list(item, 'related_service_ids', 'relatedServiceIds'), relatedCaseStudyId: value(item, 'related_case_study_id', 'relatedCaseStudyId'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), ogImage: assetUrl(value(item, 'og_image', 'ogImage')), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
   };
@@ -275,7 +325,7 @@ const normalizeMedia = (raw: unknown): MediaItem => {
 
 const projectPayload = (data: Partial<Project>, isCreate = false) => ({
   title: data.title, slug: data.slug, short_description: data.shortDescription, description: data.fullDescription || data.overview,
-  client_name: data.clientName || data.client, industry: data.industry, project_type: data.projectType || (isCreate ? 'Other' : undefined), ...(isCreate ? { status: 'active' } : {}),
+  client_name: data.clientName || data.client, industry: data.industry, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : data.category ? { category: data.category } : {}), project_type: data.projectType || (isCreate ? 'Other' : undefined), ...(isCreate ? { status: 'active' } : {}),
   ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), featured: data.featured, cover_image: data.coverImage, gallery: data.gallery || (isCreate ? [] : undefined), technologies: data.technologies || (isCreate ? [] : undefined),
   results: data.results || (isCreate ? [] : undefined), live_url: data.liveUrl, github_url: data.githubUrl, sort_order: data.sortOrder ?? (isCreate ? 0 : undefined), overview: data.overview || data.fullDescription,
   challenge: data.challenge, solution: data.solution, implementation: data.implementation, related_service_ids: data.relatedServiceIds, related_case_study_id: data.relatedCaseStudyId,
@@ -323,6 +373,8 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [solutionCategories, setSolutionCategories] = useState<SolutionCategory[]>([]);
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
+  const [projectCategories, setProjectCategories] = useState<ProjectCategory[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   const clearMutationError = () => setMutationError(null);
   const reportMutationFailure = (action: string, error?: string) => {
@@ -479,6 +531,76 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return true;
   };
 
+  const getProjectCategories = (): ProjectCategory[] => {
+    if (projectCategories.length > 0) return [...projectCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const fallback = new Map<string, ProjectCategory>();
+    db.projects.forEach(project => {
+      const name = project.category || project.categories?.[0]?.name || '';
+      if (!name) return;
+      const slug = project.categorySlug || project.categories?.[0]?.slug || slugify(name);
+      if (!fallback.has(slug)) fallback.set(slug, { id: `local-${slug}`, name, slug, description: '', sortOrder: fallback.size });
+    });
+    return [...fallback.values()];
+  };
+
+  const loadProjectCategoryBySlug = async (slug: string): Promise<ProjectCategory | undefined> => {
+    const response = await api.getProjectCategoryBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const category = normalizeProjectCategory(response.data);
+    setProjectCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    if (category.projects) {
+      setDb(prev => ({
+        ...prev,
+        projects: [...prev.projects.filter(item => !category.projects?.some(project => project.id === item.id)), ...category.projects],
+      }));
+    }
+    return category;
+  };
+
+  const createProjectCategory = async (data: Omit<ProjectCategory, 'id' | 'projects'>): Promise<ProjectCategory | undefined> => {
+    const response = await api.createAdminProjectCategory({ name: data.name, slug: data.slug, description: data.description, sort_order: data.sortOrder });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Creating project category', response.error);
+      return undefined;
+    }
+    const category = normalizeProjectCategory(response.data);
+    setProjectCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    return category;
+  };
+
+  const updateProjectCategory = async (id: string, data: Partial<Omit<ProjectCategory, 'id' | 'projects'>>): Promise<ProjectCategory | undefined> => {
+    const response = await api.updateAdminProjectCategory(id, {
+      ...(data.name !== undefined ? { name: data.name } : {}), ...(data.slug !== undefined ? { slug: data.slug } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sortOrder !== undefined ? { sort_order: data.sortOrder } : {}),
+    });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Updating project category', response.error);
+      return undefined;
+    }
+    const category = normalizeProjectCategory(response.data);
+    setProjectCategories(prev => [...prev.filter(item => item.id !== id), category]);
+    return category;
+  };
+
+  const deleteProjectCategory = async (id: string): Promise<boolean> => {
+    const response = await api.deleteAdminProjectCategory(id);
+    if (!response.success) {
+      reportMutationFailure('Deleting project category', response.error);
+      return false;
+    }
+    setProjectCategories(prev => prev.filter(item => item.id !== id));
+    setDb(prev => ({
+      ...prev,
+      projects: prev.projects.map(project => ({
+        ...project,
+        categories: project.categories?.filter(category => category.id !== id),
+        categoryIds: project.categoryIds?.filter(categoryId => categoryId !== id),
+        categoryId: project.categoryId === id ? undefined : project.categoryId,
+      })),
+    }));
+    return true;
+  };
+
   const setApiBaseUrl = (newUrl: string) => {
     api.setBaseUrl(newUrl);
     setApiBaseUrlState(api.getBaseUrl());
@@ -527,12 +649,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const syncWithApi = async (): Promise<{ success: boolean; message?: string }> => {
     setIsSyncing(true);
     try {
-      const [servicesRes, projectsRes, caseStudiesRes, categoriesRes, serviceCategoriesRes] = await Promise.all([
+      const [servicesRes, projectsRes, caseStudiesRes, categoriesRes, serviceCategoriesRes, projectCategoriesRes, teamMembersRes] = await Promise.all([
         api.getServices({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
         api.getProjects({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
         api.getCaseStudies({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
         api.getSolutionCategories(),
         api.getServiceCategories(),
+        api.getProjectCategories(),
+        api.getTeamMembers({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
       ]);
 
       const categories = categoriesRes.success && Array.isArray(categoriesRes.data)
@@ -557,6 +681,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         : [];
       if (serviceCategoriesRes.success && serviceCategories.length > 0) setServiceCategories(serviceCategories);
 
+      const projectCategories = projectCategoriesRes.success && Array.isArray(projectCategoriesRes.data)
+        ? projectCategoriesRes.data.map(category => ({ id: category.id, name: category.name, slug: category.slug, description: category.description || '', sortOrder: category.sort_order }))
+        : [];
+      if (projectCategoriesRes.success && projectCategories.length > 0) setProjectCategories(projectCategories);
+
+      const syncedTeamMembers = teamMembersRes.success ? itemsFrom(teamMembersRes).map(normalizeTeamMember) : [];
+      if (teamMembersRes.success) setTeamMembers(syncedTeamMembers);
+
       let serviceItems = servicesRes.success ? itemsFrom(servicesRes) : [];
       let servicesHealthy = servicesRes.success;
       if (serviceCategories.length > 0) {
@@ -578,6 +710,30 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             return [String(service.id || service.slug), item] as const;
           })).values()];
           servicesHealthy = true;
+        }
+      }
+
+      let projectItems = projectsRes.success ? itemsFrom(projectsRes) : [];
+      let projectsHealthy = projectsRes.success;
+      if (projectCategories.length > 0) {
+        const categoryResponses = await Promise.all(projectCategories.map(category => api.getProjectCategoryBySlug(category.slug)));
+        if (categoryResponses.every(response => response.success)) {
+          const categoryProjectItems = categoryResponses.flatMap(response => Array.isArray(response.data?.projects) ? response.data.projects : []);
+          const hasFullProjectFields = categoryProjectItems.every(item => {
+            const project = record(item);
+            return project.short_description !== undefined || project.description !== undefined;
+          });
+          if (hasFullProjectFields) {
+            projectItems = categoryProjectItems;
+          } else {
+            const fullCategoryResponses = await Promise.all(projectCategories.map(category => api.getProjectsByCategory(category.slug, { page: 1, page_size: 50, sort: 'created_at', order: 'desc' })));
+            if (fullCategoryResponses.every(response => response.success)) projectItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+          }
+          projectItems = [...new Map(projectItems.map(item => {
+            const project = record(item);
+            return [String(project.id || project.slug), item] as const;
+          })).values()];
+          projectsHealthy = true;
         }
       }
 
@@ -636,24 +792,27 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             ? { ...solution, category: category.name, categorySlug: category.slug, categoryId: category.id }
             : solution;
         });
-        const projects = projectsRes.success ? itemsFrom(projectsRes).map(normalizeProject) : [];
+        const projects = projectItems.map(normalizeProject).map(project => {
+          const category = projectCategories.find(item => item.id === project.categoryId || item.slug === project.categorySlug || item.slug === project.category || item.name === project.category);
+          return category ? { ...project, category: category.name, categorySlug: category.slug, categoryId: category.id } : project;
+        });
         const caseStudies = caseStudiesRes.success ? itemsFrom(caseStudiesRes).map(normalizeCaseStudy) : [];
         if (servicesHealthy) { next.services = services; importedCount += services.length; }
         if (solutionsHealthy) { next.solutions = solutions; importedCount += solutions.length; }
-        if (projectsRes.success) { next.projects = projects; importedCount += projects.length; }
+        if (projectsHealthy) { next.projects = projects; importedCount += projects.length; }
         if (caseStudiesRes.success) { next.caseStudies = caseStudies; importedCount += caseStudies.length; }
         return next;
       });
 
       setIsSyncing(false);
-      const isHealthy = servicesHealthy || solutionsHealthy || projectsRes.success || caseStudiesRes.success || categoriesRes.success || serviceCategoriesRes.success;
+      const isHealthy = servicesHealthy || solutionsHealthy || projectsHealthy || caseStudiesRes.success || categoriesRes.success || serviceCategoriesRes.success || projectCategoriesRes.success || teamMembersRes.success;
       if (isHealthy) {
         setApiHealth(prev => ({ ...prev, status: 'online', lastChecked: new Date().toLocaleTimeString() }));
         return { success: true, message: `Synchronized ${importedCount} records from backend API` };
       } else {
         return {
           success: false,
-          message: servicesRes.error || categoriesRes.error || serviceCategoriesRes.error || 'Backend API is currently unreachable. Using local storage.',
+          message: servicesRes.error || categoriesRes.error || serviceCategoriesRes.error || projectCategoriesRes.error || teamMembersRes.error || 'Backend API is currently unreachable. Using local storage.',
         };
       }
     } catch (err: any) {
@@ -941,6 +1100,61 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }));
     void api.deleteAdminProject(id).then(res => {
       if (!res.success) { reportMutationFailure('Deleting project', res.error); void syncAdminWithApi(); }
+    });
+  };
+
+  const getTeamMembers = (includeDrafts = false): TeamMember[] => {
+    const members = includeDrafts ? teamMembers : teamMembers.filter(member => member.status === 'PUBLISHED');
+    return [...members].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+  };
+
+  const getTeamMemberBySlug = (slug: string): TeamMember | undefined => {
+    return teamMembers.find(member => member.slug === slug && member.status === 'PUBLISHED');
+  };
+
+  const loadTeamMemberBySlug = async (slug: string): Promise<TeamMember | undefined> => {
+    const response = await api.getTeamMemberBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const member = normalizeTeamMember(response.data);
+    setTeamMembers(prev => [...prev.filter(item => item.id !== member.id), member]);
+    return member;
+  };
+
+  const teamMemberPayload = (data: Partial<TeamMember>) => ({
+    name: data.name,
+    slug: data.slug,
+    role: data.role,
+    bio: data.bio,
+    avatar_url: data.avatarUrl,
+    category: data.category,
+    featured: data.featured,
+    published: data.status === undefined ? undefined : data.status === 'PUBLISHED',
+    sort_order: data.sortOrder,
+  });
+
+  const createTeamMember = (data: Omit<TeamMember, 'id' | 'createdAt' | 'updatedAt'>): TeamMember => {
+    const now = new Date().toISOString();
+    const member: TeamMember = { ...data, id: `team-${Date.now()}`, createdAt: now, updatedAt: now };
+    setTeamMembers(prev => [...prev, member]);
+    void api.createAdminTeamMember(teamMemberPayload(member)).then(response => {
+      if (response.success && response.data) setTeamMembers(prev => prev.map(item => item.id === member.id ? normalizeTeamMember(response.data) : item));
+      else { reportMutationFailure('Creating team member', response.error); }
+    });
+    return member;
+  };
+
+  const updateTeamMember = (id: string, data: Partial<TeamMember>) => {
+    setTeamMembers(prev => prev.map(item => item.id === id ? { ...item, ...data, updatedAt: new Date().toISOString() } : item));
+    void api.updateAdminTeamMember(id, teamMemberPayload(data)).then(response => {
+      if (response.success && response.data) setTeamMembers(prev => prev.map(item => item.id === id ? normalizeTeamMember(response.data) : item));
+      else { reportMutationFailure('Updating team member', response.error); }
+    });
+  };
+
+  const deleteTeamMember = (id: string) => {
+    setTeamMembers(prev => prev.filter(item => item.id !== id));
+    void api.deleteAdminTeamMember(id).then(response => {
+      if (!response.success) reportMutationFailure('Deleting team member', response.error);
     });
   };
 
@@ -1256,6 +1470,11 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         createServiceCategory,
         updateServiceCategory,
         deleteServiceCategory,
+        getProjectCategories,
+        loadProjectCategoryBySlug,
+        createProjectCategory,
+        updateProjectCategory,
+        deleteProjectCategory,
 
          getServices,
          getServiceBySlug,
@@ -1276,8 +1495,14 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
          getProjectBySlug,
          loadProjectBySlug,
          createProject,
-        updateProject,
-        deleteProject,
+         updateProject,
+         deleteProject,
+         getTeamMembers,
+         getTeamMemberBySlug,
+         loadTeamMemberBySlug,
+         createTeamMember,
+         updateTeamMember,
+         deleteTeamMember,
 
          getCaseStudies,
          getCaseStudyBySlug,

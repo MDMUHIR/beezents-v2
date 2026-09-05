@@ -26,8 +26,9 @@ For a separately hosted production frontend, use a reverse proxy on the same
 site or configure HTTPS-compatible cookie/CORS settings on the backend.
 
 Public CMS content is loaded from `/api/v1/projects`, `/case-studies`,
-`/services`, and `/solutions`. Staff CMS screens use the corresponding
-`/api/v1/admin/*` endpoints, including leads and multipart media uploads.
+`/services`, `/solutions`, and `/team-members`. Staff CMS screens use the
+corresponding `/api/v1/admin/*` endpoints, including leads, team members, and
+multipart media uploads.
 
 The public contact and demo forms submit to `/api/v1/leads`. Authentication is
 session-cookie based: login/logout/me use the FastAPI HTTP-only cookie and the

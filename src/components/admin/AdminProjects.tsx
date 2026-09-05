@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDatabase } from '../../context/DatabaseContext';
-import { Project } from '../../types';
+import { Project, ProjectCategory } from '../../types';
 import {
   Plus,
   Search,
@@ -15,16 +15,22 @@ import {
 } from 'lucide-react';
 
 export const AdminProjects: React.FC = () => {
-  const { getProjects, createProject, updateProject, deleteProject } = useDatabase();
+  const { getProjects, getProjectCategories, createProject, updateProject, deleteProject, createProjectCategory, updateProjectCategory, deleteProjectCategory } = useDatabase();
   const projects = getProjects(true);
+  const projectCategories = getProjectCategories();
+  const remoteCategoryIds = (ids: string[]) => ids.filter(id => id && !id.startsWith('local-'));
 
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryForm, setCategoryForm] = useState({ name: '', slug: '', description: '', sortOrder: 0 });
 
   const initialForm = {
     title: '',
     slug: '',
+    categoryIds: remoteCategoryIds(projectCategories.slice(0, 1).map(category => category.id)),
     shortDescription: '',
     fullDescription: '',
     client: '',
@@ -41,6 +47,28 @@ export const AdminProjects: React.FC = () => {
 
   const [formData, setFormData] = useState(initialForm);
 
+  const openCreateCategoryModal = () => {
+    setEditingCategoryId(null);
+    setCategoryForm({ name: '', slug: '', description: '', sortOrder: projectCategories.length });
+    setCategoryModalOpen(true);
+  };
+  const openEditCategoryModal = (category: ProjectCategory) => {
+    setEditingCategoryId(category.id);
+    setCategoryForm({ name: category.name, slug: category.slug, description: category.description || '', sortOrder: category.sortOrder });
+    setCategoryModalOpen(true);
+  };
+  const handleCategorySave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const slug = categoryForm.slug.trim() || categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const payload = { ...categoryForm, name: categoryForm.name.trim(), slug };
+    const saved = editingCategoryId ? await updateProjectCategory(editingCategoryId, payload) : await createProjectCategory(payload);
+    if (saved) setCategoryModalOpen(false);
+  };
+  const handleCategoryDelete = async (category: ProjectCategory) => {
+    if (category.id.startsWith('local-')) return;
+    if (confirm(`Delete project category "${category.name}"? Projects will not be deleted.`)) await deleteProjectCategory(category.id);
+  };
+
   const openCreateModal = () => {
     setEditingId(null);
     setFormData(initialForm);
@@ -52,6 +80,7 @@ export const AdminProjects: React.FC = () => {
     setFormData({
       title: project.title,
       slug: project.slug,
+      categoryIds: remoteCategoryIds(project.categoryIds || project.categories?.map(category => category.id) || (project.categoryId ? [project.categoryId] : projectCategories.filter(category => category.slug === project.categorySlug).map(category => category.id))),
       shortDescription: project.shortDescription,
       fullDescription: project.fullDescription,
       client: project.client || '',
@@ -81,6 +110,7 @@ export const AdminProjects: React.FC = () => {
       updateProject(editingId, {
         title: formData.title,
         slug: generatedSlug,
+        categoryIds: formData.categoryIds,
         shortDescription: formData.shortDescription,
         fullDescription: formData.fullDescription,
         client: formData.client,
@@ -98,6 +128,7 @@ export const AdminProjects: React.FC = () => {
       createProject({
         title: formData.title,
         slug: generatedSlug,
+        categoryIds: formData.categoryIds,
         shortDescription: formData.shortDescription,
         fullDescription: formData.fullDescription,
         client: formData.client,
@@ -143,6 +174,16 @@ export const AdminProjects: React.FC = () => {
           <Plus className="w-4 h-4" />
           <span>New Project</span>
         </button>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <div><h2 className="text-sm font-bold text-slate-900">Project Categories</h2><p className="text-[11px] text-slate-500">Assign one or more categories to each project.</p></div>
+          <button onClick={openCreateCategoryModal} className="rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-semibold text-white hover:bg-slate-700">New Category</button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {projectCategories.map(category => <div key={category.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"><span className="font-semibold text-slate-800">{category.name}</span>{!category.id.startsWith('local-') && <><button onClick={() => openEditCategoryModal(category)} className="text-[#0282EB] hover:underline">Edit</button><button onClick={() => void handleCategoryDelete(category)} className="text-red-600 hover:underline">Delete</button></>}</div>)}
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -337,6 +378,13 @@ export const AdminProjects: React.FC = () => {
               </div>
 
               <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Categories</label>
+                <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+                  {projectCategories.length > 0 ? projectCategories.map(category => <label key={category.id} className="flex items-center gap-2 text-xs text-slate-700"><input type="checkbox" checked={formData.categoryIds.includes(category.id)} onChange={e => setFormData({ ...formData, categoryIds: e.target.checked ? [...formData.categoryIds, category.id] : formData.categoryIds.filter(id => id !== category.id) })} className="h-4 w-4 rounded text-[#0282EB]" /><span>{category.name}</span></label>) : <span className="text-xs text-slate-500">Create a category before assigning it.</span>}
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Cover Image URL
                 </label>
@@ -473,6 +521,10 @@ export const AdminProjects: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {categoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"><div className="w-full max-w-md space-y-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl"><div className="flex items-center justify-between border-b border-slate-100 pb-4"><h3 className="text-xl font-bold text-slate-900">{editingCategoryId ? 'Edit Project Category' : 'New Project Category'}</h3><button onClick={() => setCategoryModalOpen(false)} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-800"><X className="h-5 w-5" /></button></div><form onSubmit={handleCategorySave} className="space-y-4"><input required placeholder="Category name" value={categoryForm.name} onChange={e => setCategoryForm({ ...categoryForm, name: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-hidden focus:border-[#0282EB]" /><input required placeholder="category-slug" value={categoryForm.slug} onChange={e => setCategoryForm({ ...categoryForm, slug: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-hidden focus:border-[#0282EB]" /><textarea placeholder="Description (optional)" value={categoryForm.description} onChange={e => setCategoryForm({ ...categoryForm, description: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-hidden focus:border-[#0282EB]" rows={3} /><input type="number" min={0} value={categoryForm.sortOrder} onChange={e => setCategoryForm({ ...categoryForm, sortOrder: Number(e.target.value) })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs outline-hidden focus:border-[#0282EB]" /><div className="flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={() => setCategoryModalOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button><button type="submit" className="rounded-xl bg-[#0282EB] px-5 py-2 text-xs font-semibold text-white">Save Category</button></div></form></div></div>
       )}
     </div>
   );

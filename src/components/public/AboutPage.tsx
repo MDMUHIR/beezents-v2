@@ -121,7 +121,7 @@ export const AboutPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {teamMembers.map(member => (
               <div
                 key={member.name}
@@ -136,10 +136,20 @@ export const AboutPage: React.FC = () => {
                   <p className="text-xs text-slate-600 leading-relaxed">{member.bio}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+             ))}
+           </div>
+           <div className="mt-10 text-center">
+             <Link
+               href="/team"
+               className="inline-flex items-center gap-2 rounded-full bg-[#0282EB] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1d58c4]"
+             >
+               <Users className="h-4 w-4" />
+               Meet the full team
+               <ArrowRight className="h-4 w-4" />
+             </Link>
+           </div>
+         </div>
+       </section>
 
       {/* CTA */}
       <section className="py-20 bg-[#F8FAFC]">

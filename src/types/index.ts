@@ -99,6 +99,32 @@ export interface ServiceCategory {
   services?: Service[];
 }
 
+export interface ProjectCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder: number;
+  projects?: Project[];
+}
+
+export type TeamMemberCategory = 'leadership' | 'talent';
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+  bio?: string;
+  avatarUrl?: string;
+  category: TeamMemberCategory;
+  featured: boolean;
+  sortOrder: number;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -107,6 +133,11 @@ export interface Project {
   fullDescription: string;
   projectType: ProjectType;
   industry: string;
+  category?: string;
+  categorySlug?: string;
+  categoryId?: string;
+  categoryIds?: string[];
+  categories?: ProjectCategory[];
   client?: string;
   clientName?: string;
   timeline?: string;

@@ -73,6 +73,30 @@ export interface ServiceCategoryResponse {
   services?: unknown[];
 }
 
+export interface ProjectCategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+  projects?: unknown[];
+}
+
+export interface TeamMemberResponse {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+  bio: string | null;
+  avatar_url: string | null;
+  category: 'leadership' | 'talent';
+  featured: boolean;
+  sort_order: number;
+  published?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
 const queryString = (params?: QueryParams) => {
@@ -191,7 +215,16 @@ export class ApiClient {
   public getDevAdmin() { return this.request('/api/v1/dev/admin'); }
 
   public getProjects(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/projects${queryString(params)}`); }
+  public getProjectsByCategory(categorySlug: string, params?: QueryParams) {
+    return this.getProjects({ ...params, category: categorySlug });
+  }
   public getProjectBySlug(slug: string) { return this.request<unknown>(`/api/v1/projects/${encodeURIComponent(slug)}`); }
+  public getProjectCategories() { return this.request<ProjectCategoryResponse[]>('/api/v1/project-categories'); }
+  public getProjectCategoryBySlug(slug: string) {
+    return this.request<ProjectCategoryResponse>(`/api/v1/project-categories/${encodeURIComponent(slug)}`);
+  }
+  public getTeamMembers(params?: QueryParams) { return this.request<PaginatedResponse<TeamMemberResponse>>(`/api/v1/team-members${queryString(params)}`); }
+  public getTeamMemberBySlug(slug: string) { return this.request<TeamMemberResponse>(`/api/v1/team-members/${encodeURIComponent(slug)}`); }
   public getCaseStudies(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/case-studies${queryString(params)}`); }
   public getCaseStudyBySlug(slug: string) { return this.request<unknown>(`/api/v1/case-studies/${encodeURIComponent(slug)}`); }
   public getServices(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/services${queryString(params)}`); }
@@ -222,6 +255,18 @@ export class ApiClient {
   public getAdminProject(id: string) { return this.request<unknown>(`/api/v1/admin/projects/${encodeURIComponent(id)}`); }
   public updateAdminProject(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/projects/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
   public deleteAdminProject(id: string) { return this.request(`/api/v1/admin/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  public listAdminProjectCategories(params?: QueryParams) { return this.request<PaginatedResponse<ProjectCategoryResponse>>(`/api/v1/admin/project-categories${queryString(params)}`); }
+  public createAdminProjectCategory(data: unknown) { return this.request<ProjectCategoryResponse>('/api/v1/admin/project-categories', { method: 'POST', body: data }); }
+  public getAdminProjectCategory(id: string) { return this.request<ProjectCategoryResponse>(`/api/v1/admin/project-categories/${encodeURIComponent(id)}`); }
+  public updateAdminProjectCategory(id: string, data: unknown) { return this.request<ProjectCategoryResponse>(`/api/v1/admin/project-categories/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminProjectCategory(id: string) { return this.request(`/api/v1/admin/project-categories/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  public listAdminTeamMembers(params?: QueryParams) { return this.request<PaginatedResponse<TeamMemberResponse>>(`/api/v1/admin/team-members${queryString(params)}`); }
+  public createAdminTeamMember(data: unknown) { return this.request<TeamMemberResponse>('/api/v1/admin/team-members', { method: 'POST', body: data }); }
+  public getAdminTeamMember(id: string) { return this.request<TeamMemberResponse>(`/api/v1/admin/team-members/${encodeURIComponent(id)}`); }
+  public updateAdminTeamMember(id: string, data: unknown) { return this.request<TeamMemberResponse>(`/api/v1/admin/team-members/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminTeamMember(id: string) { return this.request(`/api/v1/admin/team-members/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
   public listAdminServices(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/services${queryString(params)}`); }
   public createAdminService(data: unknown) { return this.request<unknown>('/api/v1/admin/services', { method: 'POST', body: data }); }

@@ -3,17 +3,27 @@ import { Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { ArrowRight, ExternalLink, Sparkles, Filter } from 'lucide-react';
 
-export const ProjectsPage: React.FC = () => {
-  const { getProjects } = useDatabase();
+export const ProjectsPage: React.FC<{ categorySlug?: string }> = ({ categorySlug }) => {
+  const { getProjects, getProjectCategories, loadProjectCategoryBySlug } = useDatabase();
   const projects = getProjects();
+  const projectCategories = getProjectCategories();
 
   const [selectedIndustry, setSelectedIndustry] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState(categorySlug || 'ALL');
 
   const industries = ['ALL', ...Array.from(new Set(projects.map(p => p.industry)))];
 
-  const filteredProjects = selectedIndustry === 'ALL'
+  React.useEffect(() => {
+    setSelectedCategory(categorySlug || 'ALL');
+    if (categorySlug) void loadProjectCategoryBySlug(categorySlug);
+  }, [categorySlug]);
+
+  const categoryFiltered = selectedCategory === 'ALL'
     ? projects
-    : projects.filter(p => p.industry === selectedIndustry);
+    : projects.filter(project => (project.categorySlug || project.category?.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) === selectedCategory);
+  const filteredProjects = selectedIndustry === 'ALL'
+    ? categoryFiltered
+    : categoryFiltered.filter(p => p.industry === selectedIndustry);
 
   return (
     <div className="w-full bg-[#F8FAFC]">
@@ -35,6 +45,13 @@ export const ProjectsPage: React.FC = () => {
 
           {/* Filter Pills */}
           <div className="mt-10 flex flex-wrap items-center gap-2">
+            {[{ slug: 'ALL', name: 'All Projects' }, ...projectCategories].map(category => (
+              <button key={category.slug} onClick={() => setSelectedCategory(category.slug)} className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${selectedCategory === category.slug ? 'bg-[#0282EB] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'}`}>
+                {category.name}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             {industries.map(ind => (
               <button
                 key={ind}

@@ -23,6 +23,8 @@ import { ProjectDetailPage } from './components/public/ProjectDetailPage';
 import { CaseStudiesPage } from './components/public/CaseStudiesPage';
 import { CaseStudyDetailPage } from './components/public/CaseStudyDetailPage';
 import { AboutPage } from './components/public/AboutPage';
+import { TeamPage } from './components/public/TeamPage';
+import { TeamMemberDetailPage } from './components/public/TeamMemberDetailPage';
 import { ContactPage } from './components/public/ContactPage';
 import { BlogPage } from './components/public/BlogPage';
 import { BlogPostPage } from './components/public/BlogPostPage';
@@ -41,6 +43,7 @@ import { AdminInquiries } from './components/admin/AdminInquiries';
 import { AdminMedia } from './components/admin/AdminMedia';
 import { AdminSettings } from './components/admin/AdminSettings';
 import { AdminBackendNotice } from './components/admin/AdminBackendNotice';
+import { AdminTeamMembers } from './components/admin/AdminTeamMembers';
 
 const AppContent: React.FC = () => {
   const { path } = useRouter();
@@ -75,6 +78,8 @@ const AppContent: React.FC = () => {
       adminChild = <AdminServices />;
     } else if (path.startsWith('/admin/solutions')) {
       adminChild = <AdminSolutions />;
+    } else if (path.startsWith('/admin/team-members')) {
+      adminChild = <AdminTeamMembers />;
     } else if (path.startsWith('/admin/blog')) {
       adminChild = <AdminBackendNotice title="Blog management is not available" detail="The current backend contract exposes projects, case studies, services, solutions, leads, and media. Blog CRUD is not exposed, so this screen does not write to local-only data." />;
     } else if (path.startsWith('/admin/inquiries')) {
@@ -148,6 +153,10 @@ const AppContent: React.FC = () => {
     if (path === '/projects' || path === '/projects/') {
       return <ProjectsPage />;
     }
+    if (path.startsWith('/projects/category/')) {
+      const categorySlug = path.replace('/projects/category/', '').split('/')[0];
+      return <ProjectsPage categorySlug={categorySlug} />;
+    }
     if (path.startsWith('/projects/')) {
       const slug = path.replace('/projects/', '').split('/')[0];
       return <ProjectDetailPage slug={slug} />;
@@ -165,6 +174,14 @@ const AppContent: React.FC = () => {
     // About
     if (path === '/about' || path === '/about/') {
       return <AboutPage />;
+    }
+
+    if (path === '/team' || path === '/team/') {
+      return <TeamPage />;
+    }
+    if (path.startsWith('/team/')) {
+      const slug = path.replace('/team/', '').split('/')[0];
+      return <TeamMemberDetailPage slug={slug} />;
     }
 
     // Contact

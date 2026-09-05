@@ -9,6 +9,7 @@ import {
   BookOpen,
   Cpu,
   Sparkles,
+  Users,
   Mail,
   Image as ImageIcon,
   Settings,
@@ -37,6 +38,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     { label: 'Case Studies', href: '/admin/case-studies', icon: <BookOpen className="w-4 h-4" /> },
     { label: 'Services', href: '/admin/services', icon: <Cpu className="w-4 h-4" /> },
     { label: 'Solutions', href: '/admin/solutions', icon: <Sparkles className="w-4 h-4" /> },
+    { label: 'Team Members', href: '/admin/team-members', icon: <Users className="w-4 h-4" /> },
     {
       label: 'Inquiries',
       href: '/admin/inquiries',
