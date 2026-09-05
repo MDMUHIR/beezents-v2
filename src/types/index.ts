@@ -28,6 +28,11 @@ export interface Service {
   shortDescription: string;
   fullDescription: string;
   icon: string;
+  category?: string;
+  categorySlug?: string;
+  categoryId?: string;
+  categoryIds?: string[];
+  categories?: ServiceCategory[];
   heroVisual?: string;
   features: string[];
   benefits: string[];
@@ -49,6 +54,10 @@ export interface Solution {
   title: string;
   slug: string;
   category: string;
+  categorySlug?: string;
+  categoryId?: string;
+  categoryIds?: string[];
+  categories?: SolutionCategory[];
   shortDescription: string;
   description: string;
   fullDescription?: string;
@@ -70,6 +79,24 @@ export interface Solution {
   featured: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SolutionCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder: number;
+  solutions?: Solution[];
+}
+
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sortOrder: number;
+  services?: Service[];
 }
 
 export interface Project {

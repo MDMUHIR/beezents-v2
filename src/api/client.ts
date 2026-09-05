@@ -55,6 +55,24 @@ export interface MediaAdminResponse {
   updated_at: string;
 }
 
+export interface SolutionCategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+  solutions?: unknown[];
+}
+
+export interface ServiceCategoryResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  sort_order: number;
+  services?: unknown[];
+}
+
 export type QueryParams = Record<string, string | number | boolean | undefined | null>;
 
 const queryString = (params?: QueryParams) => {
@@ -177,9 +195,23 @@ export class ApiClient {
   public getCaseStudies(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/case-studies${queryString(params)}`); }
   public getCaseStudyBySlug(slug: string) { return this.request<unknown>(`/api/v1/case-studies/${encodeURIComponent(slug)}`); }
   public getServices(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/services${queryString(params)}`); }
+  public getServicesByCategory(categorySlug: string, params?: QueryParams) {
+    return this.getServices({ ...params, category: categorySlug });
+  }
   public getServiceBySlug(slug: string) { return this.request<unknown>(`/api/v1/services/${encodeURIComponent(slug)}`); }
+  public getServiceCategories() { return this.request<ServiceCategoryResponse[]>('/api/v1/service-categories'); }
+  public getServiceCategoryBySlug(slug: string) {
+    return this.request<ServiceCategoryResponse>(`/api/v1/service-categories/${encodeURIComponent(slug)}`);
+  }
   public getSolutions(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/solutions${queryString(params)}`); }
+  public getSolutionsByCategory(categorySlug: string, params?: QueryParams) {
+    return this.getSolutions({ ...params, category: categorySlug });
+  }
   public getSolutionBySlug(slug: string) { return this.request<unknown>(`/api/v1/solutions/${encodeURIComponent(slug)}`); }
+  public getSolutionCategories() { return this.request<SolutionCategoryResponse[]>('/api/v1/solution-categories'); }
+  public getSolutionCategoryBySlug(slug: string) {
+    return this.request<SolutionCategoryResponse>(`/api/v1/solution-categories/${encodeURIComponent(slug)}`);
+  }
 
   public createLead(lead: { name: string; email: string; phone?: string; company?: string; service?: string; message: string; source?: string }) {
     return this.request<LeadCreateResponse>('/api/v1/leads', { method: 'POST', body: lead });
@@ -197,11 +229,23 @@ export class ApiClient {
   public updateAdminService(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/services/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
   public deleteAdminService(id: string) { return this.request(`/api/v1/admin/services/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
+  public listAdminServiceCategories(params?: QueryParams) { return this.request<PaginatedResponse<ServiceCategoryResponse>>(`/api/v1/admin/service-categories${queryString(params)}`); }
+  public createAdminServiceCategory(data: unknown) { return this.request<ServiceCategoryResponse>('/api/v1/admin/service-categories', { method: 'POST', body: data }); }
+  public getAdminServiceCategory(id: string) { return this.request<ServiceCategoryResponse>(`/api/v1/admin/service-categories/${encodeURIComponent(id)}`); }
+  public updateAdminServiceCategory(id: string, data: unknown) { return this.request<ServiceCategoryResponse>(`/api/v1/admin/service-categories/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminServiceCategory(id: string) { return this.request(`/api/v1/admin/service-categories/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
   public listAdminSolutions(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/solutions${queryString(params)}`); }
   public createAdminSolution(data: unknown) { return this.request<unknown>('/api/v1/admin/solutions', { method: 'POST', body: data }); }
   public getAdminSolution(id: string) { return this.request<unknown>(`/api/v1/admin/solutions/${encodeURIComponent(id)}`); }
   public updateAdminSolution(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/solutions/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
   public deleteAdminSolution(id: string) { return this.request(`/api/v1/admin/solutions/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  public listAdminSolutionCategories(params?: QueryParams) { return this.request<PaginatedResponse<SolutionCategoryResponse>>(`/api/v1/admin/solution-categories${queryString(params)}`); }
+  public createAdminSolutionCategory(data: unknown) { return this.request<SolutionCategoryResponse>('/api/v1/admin/solution-categories', { method: 'POST', body: data }); }
+  public getAdminSolutionCategory(id: string) { return this.request<SolutionCategoryResponse>(`/api/v1/admin/solution-categories/${encodeURIComponent(id)}`); }
+  public updateAdminSolutionCategory(id: string, data: unknown) { return this.request<SolutionCategoryResponse>(`/api/v1/admin/solution-categories/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
+  public deleteAdminSolutionCategory(id: string) { return this.request(`/api/v1/admin/solution-categories/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
 
   public listAdminCaseStudies(params?: QueryParams) { return this.request<PaginatedResponse<unknown>>(`/api/v1/admin/case-studies${queryString(params)}`); }
   public createAdminCaseStudy(data: unknown) { return this.request<unknown>('/api/v1/admin/case-studies', { method: 'POST', body: data }); }

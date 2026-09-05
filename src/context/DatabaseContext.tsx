@@ -12,7 +12,9 @@ import {
   SiteSettings,
   InquiryStatus,
   UserRole,
-  ProjectType
+  ProjectType,
+  SolutionCategory,
+  ServiceCategory
 } from '../types';
 import { initialDatabase } from '../data/seedData';
 import { api } from '../api';
@@ -50,6 +52,16 @@ interface DatabaseContextType {
   syncWithApi: () => Promise<{ success: boolean; message?: string }>;
   mutationError: string | null;
   clearMutationError: () => void;
+  getSolutionCategories: () => SolutionCategory[];
+  loadSolutionCategoryBySlug: (slug: string) => Promise<SolutionCategory | undefined>;
+  createSolutionCategory: (data: Omit<SolutionCategory, 'id' | 'solutions'>) => Promise<SolutionCategory | undefined>;
+  updateSolutionCategory: (id: string, data: Partial<Omit<SolutionCategory, 'id' | 'solutions'>>) => Promise<SolutionCategory | undefined>;
+  deleteSolutionCategory: (id: string) => Promise<boolean>;
+  getServiceCategories: () => ServiceCategory[];
+  loadServiceCategoryBySlug: (slug: string) => Promise<ServiceCategory | undefined>;
+  createServiceCategory: (data: Omit<ServiceCategory, 'id' | 'services'>) => Promise<ServiceCategory | undefined>;
+  updateServiceCategory: (id: string, data: Partial<Omit<ServiceCategory, 'id' | 'services'>>) => Promise<ServiceCategory | undefined>;
+  deleteServiceCategory: (id: string) => Promise<boolean>;
 
   // Services
   getServices: (includeDrafts?: boolean) => Service[];
@@ -138,6 +150,29 @@ const list = (item: ApiRecord, ...keys: string[]): any[] => {
   return Array.isArray(result) ? result : [];
 };
 const iso = (item: ApiRecord, ...keys: string[]) => String(value(item, ...keys) || new Date().toISOString());
+const slugify = (raw: string) => raw.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+const normalizeSolutionCategory = (raw: unknown): SolutionCategory => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''),
+    name: String(value(item, 'name') || ''),
+    slug: String(value(item, 'slug') || ''),
+    description: value(item, 'description') || '',
+    sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0),
+    solutions: Array.isArray(value(item, 'solutions')) ? list(item, 'solutions').map(normalizeSolution) : undefined,
+  };
+};
+const normalizeServiceCategory = (raw: unknown): ServiceCategory => {
+  const item = record(raw);
+  return {
+    id: String(value(item, 'id') || ''),
+    name: String(value(item, 'name') || ''),
+    slug: String(value(item, 'slug') || ''),
+    description: value(item, 'description') || '',
+    sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0),
+    services: Array.isArray(value(item, 'services')) ? list(item, 'services').map(normalizeService) : undefined,
+  };
+};
 const assetUrl = (raw: unknown) => {
   const url = String(raw || '');
   return url.startsWith('/') ? `${api.getBaseUrl()}${url}` : url;
@@ -175,8 +210,16 @@ const normalizeUser = (raw: unknown): AdminUser => {
 };
 const normalizeService = (raw: unknown): Service => {
   const item = record(raw);
+  const nestedCategories = list(item, 'categories').map(normalizeServiceCategory);
+  const categoryValue = value(item, 'category');
+  const categoryObject = record(categoryValue);
+  const categoryName = nestedCategories[0]?.name || (typeof categoryValue === 'object' && categoryValue !== null
+    ? String(value(categoryObject, 'name', 'title', 'slug') || '')
+    : String(categoryValue || value(item, 'category_name') || ''));
+  const categorySlug = nestedCategories[0]?.slug || String(value(item, 'category_slug') || value(categoryObject, 'slug') || (categoryName ? slugify(categoryName) : ''));
+  const categoryIds = nestedCategories.map(category => category.id).filter(Boolean);
   return {
-    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''),
+    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''), category: categoryName, categorySlug, categoryId: categoryIds[0] || String(value(item, 'category_id') || value(categoryObject, 'id') || '') || undefined, categoryIds, categories: nestedCategories,
     shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: String(value(item, 'description', 'full_description', 'fullDescription') || ''),
     icon: String(value(item, 'icon') || 'Bot'), heroVisual: value(item, 'hero_visual', 'heroVisual'), features: list(item, 'features'), benefits: list(item, 'benefits'),
     technologies: list(item, 'technologies'), process: list(item, 'process').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
@@ -187,8 +230,16 @@ const normalizeService = (raw: unknown): Service => {
 };
 const normalizeSolution = (raw: unknown): Solution => {
   const item = record(raw);
+  const nestedCategories = list(item, 'categories').map(normalizeSolutionCategory);
+  const categoryValue = value(item, 'category');
+  const categoryObject = record(categoryValue);
+  const categoryName = nestedCategories[0]?.name || (typeof categoryValue === 'object' && categoryValue !== null
+    ? String(value(categoryObject, 'name', 'title', 'slug') || '')
+    : String(categoryValue || value(item, 'category_name') || ''));
+  const categorySlug = nestedCategories[0]?.slug || String(value(item, 'category_slug') || value(categoryObject, 'slug') || (categoryName ? slugify(categoryName) : ''));
+  const categoryIds = nestedCategories.map(category => category.id).filter(Boolean);
   return {
-    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''), category: String(value(item, 'category') || ''),
+    id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''), category: categoryName, categorySlug, categoryId: categoryIds[0] || String(value(item, 'category_id') || value(categoryObject, 'id') || '') || undefined, categoryIds, categories: nestedCategories,
     shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), description: String(value(item, 'description') || ''), fullDescription: value(item, 'description', 'full_description', 'fullDescription'),
     businessProblem: String(value(item, 'business_problem', 'businessProblem') || ''), problemSolved: value(item, 'business_problem', 'businessProblem'), solution: String(value(item, 'solution') || ''), howItWorks: value(item, 'solution', 'how_it_works', 'howItWorks'),
     features: list(item, 'features'), benefits: list(item, 'benefits'), workflow: list(item, 'workflow').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
@@ -230,11 +281,11 @@ const projectPayload = (data: Partial<Project>, isCreate = false) => ({
   challenge: data.challenge, solution: data.solution, implementation: data.implementation, related_service_ids: data.relatedServiceIds, related_case_study_id: data.relatedCaseStudyId,
 });
 const servicePayload = (data: Partial<Service>) => ({
-  name: data.title, slug: data.slug, short_description: data.shortDescription, description: data.fullDescription, icon: data.icon, features: data.features, benefits: data.benefits,
+  name: data.title, slug: data.slug, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : data.category ? { category: data.category } : {}), short_description: data.shortDescription, description: data.fullDescription, icon: data.icon, features: data.features, benefits: data.benefits,
   technologies: data.technologies, process: data.process, cta_text: data.ctaText, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), sort_order: data.sortOrder, problem_statement: data.problemStatement, our_approach: data.ourApproach, seo_title: data.seoTitle, seo_description: data.seoDescription,
 });
 const solutionPayload = (data: Partial<Solution>) => ({
-  name: data.title, slug: data.slug, category: data.category, short_description: data.shortDescription, description: data.description || data.fullDescription, business_problem: data.businessProblem || data.problemSolved, solution: data.solution || data.howItWorks,
+  name: data.title, slug: data.slug, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : { category: data.category }), short_description: data.shortDescription, description: data.description || data.fullDescription, business_problem: data.businessProblem || data.problemSolved, solution: data.solution || data.howItWorks,
   features: data.features, benefits: data.benefits, workflow: data.workflow, integrations: data.integrations, technologies: data.technologies, visual: data.visual, featured: data.featured, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), cta_text: data.ctaText, seo_title: data.seoTitle, seo_description: data.seoDescription,
 });
 const caseStudyPayload = (data: Partial<CaseStudy>, isCreate = false) => ({
@@ -270,10 +321,162 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [solutionCategories, setSolutionCategories] = useState<SolutionCategory[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
 
   const clearMutationError = () => setMutationError(null);
   const reportMutationFailure = (action: string, error?: string) => {
     setMutationError(`${action} failed${error ? `: ${error}` : '.'}`);
+  };
+
+  const getSolutionCategories = (): SolutionCategory[] => {
+    if (solutionCategories.length > 0) return [...solutionCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+
+    const fallback = new Map<string, SolutionCategory>();
+    db.solutions.forEach(solution => {
+      const name = solution.category.trim();
+      if (!name) return;
+      const slug = solution.categorySlug || slugify(name);
+      if (!fallback.has(slug)) {
+        fallback.set(slug, { id: `local-${slug}`, name, slug, description: '', sortOrder: fallback.size });
+      }
+    });
+    return [...fallback.values()];
+  };
+
+  const loadSolutionCategoryBySlug = async (slug: string): Promise<SolutionCategory | undefined> => {
+    const response = await api.getSolutionCategoryBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const category = normalizeSolutionCategory(response.data);
+    setSolutionCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    if (category.solutions) {
+      setDb(prev => ({
+        ...prev,
+        solutions: [...prev.solutions.filter(item => !category.solutions?.some(solution => solution.id === item.id)), ...category.solutions],
+      }));
+    }
+    return category;
+  };
+
+  const createSolutionCategory = async (data: Omit<SolutionCategory, 'id' | 'solutions'>): Promise<SolutionCategory | undefined> => {
+    const response = await api.createAdminSolutionCategory({
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      sort_order: data.sortOrder,
+    });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Creating solution category', response.error);
+      return undefined;
+    }
+    const category = normalizeSolutionCategory(response.data);
+    setSolutionCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    return category;
+  };
+
+  const updateSolutionCategory = async (id: string, data: Partial<Omit<SolutionCategory, 'id' | 'solutions'>>): Promise<SolutionCategory | undefined> => {
+    const response = await api.updateAdminSolutionCategory(id, {
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.slug !== undefined ? { slug: data.slug } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.sortOrder !== undefined ? { sort_order: data.sortOrder } : {}),
+    });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Updating solution category', response.error);
+      return undefined;
+    }
+    const category = normalizeSolutionCategory(response.data);
+    setSolutionCategories(prev => [...prev.filter(item => item.id !== id), category]);
+    return category;
+  };
+
+  const deleteSolutionCategory = async (id: string): Promise<boolean> => {
+    const response = await api.deleteAdminSolutionCategory(id);
+    if (!response.success) {
+      reportMutationFailure('Deleting solution category', response.error);
+      return false;
+    }
+    setSolutionCategories(prev => prev.filter(item => item.id !== id));
+    setDb(prev => ({
+      ...prev,
+      solutions: prev.solutions.map(solution => ({
+        ...solution,
+        categories: solution.categories?.filter(category => category.id !== id),
+        categoryIds: solution.categoryIds?.filter(categoryId => categoryId !== id),
+        categoryId: solution.categoryId === id ? undefined : solution.categoryId,
+      })),
+    }));
+    return true;
+  };
+
+  const getServiceCategories = (): ServiceCategory[] => {
+    if (serviceCategories.length > 0) return [...serviceCategories].sort((a, b) => a.sortOrder - b.sortOrder);
+    const fallback = new Map<string, ServiceCategory>();
+    db.services.forEach(service => {
+      const name = service.category || service.categories?.[0]?.name || '';
+      if (!name) return;
+      const slug = service.categorySlug || service.categories?.[0]?.slug || slugify(name);
+      if (!fallback.has(slug)) fallback.set(slug, { id: `local-${slug}`, name, slug, description: '', sortOrder: fallback.size });
+    });
+    return [...fallback.values()];
+  };
+
+  const loadServiceCategoryBySlug = async (slug: string): Promise<ServiceCategory | undefined> => {
+    const response = await api.getServiceCategoryBySlug(slug);
+    if (!response.success || !response.data) return undefined;
+    const category = normalizeServiceCategory(response.data);
+    setServiceCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    if (category.services) {
+      setDb(prev => ({
+        ...prev,
+        services: [...prev.services.filter(item => !category.services?.some(service => service.id === item.id)), ...category.services],
+      }));
+    }
+    return category;
+  };
+
+  const createServiceCategory = async (data: Omit<ServiceCategory, 'id' | 'services'>): Promise<ServiceCategory | undefined> => {
+    const response = await api.createAdminServiceCategory({ name: data.name, slug: data.slug, description: data.description, sort_order: data.sortOrder });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Creating service category', response.error);
+      return undefined;
+    }
+    const category = normalizeServiceCategory(response.data);
+    setServiceCategories(prev => [...prev.filter(item => item.id !== category.id), category]);
+    return category;
+  };
+
+  const updateServiceCategory = async (id: string, data: Partial<Omit<ServiceCategory, 'id' | 'services'>>): Promise<ServiceCategory | undefined> => {
+    const response = await api.updateAdminServiceCategory(id, {
+      ...(data.name !== undefined ? { name: data.name } : {}), ...(data.slug !== undefined ? { slug: data.slug } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}), ...(data.sortOrder !== undefined ? { sort_order: data.sortOrder } : {}),
+    });
+    if (!response.success || !response.data) {
+      reportMutationFailure('Updating service category', response.error);
+      return undefined;
+    }
+    const category = normalizeServiceCategory(response.data);
+    setServiceCategories(prev => [...prev.filter(item => item.id !== id), category]);
+    return category;
+  };
+
+  const deleteServiceCategory = async (id: string): Promise<boolean> => {
+    const response = await api.deleteAdminServiceCategory(id);
+    if (!response.success) {
+      reportMutationFailure('Deleting service category', response.error);
+      return false;
+    }
+    setServiceCategories(prev => prev.filter(item => item.id !== id));
+    setDb(prev => ({
+      ...prev,
+      services: prev.services.map(service => ({
+        ...service,
+        categories: service.categories?.filter(category => category.id !== id),
+        categoryIds: service.categoryIds?.filter(categoryId => categoryId !== id),
+        categoryId: service.categoryId === id ? undefined : service.categoryId,
+      })),
+    }));
+    return true;
   };
 
   const setApiBaseUrl = (newUrl: string) => {
@@ -324,36 +527,133 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const syncWithApi = async (): Promise<{ success: boolean; message?: string }> => {
     setIsSyncing(true);
     try {
-      const [servicesRes, solutionsRes, projectsRes, caseStudiesRes] = await Promise.all([
+      const [servicesRes, projectsRes, caseStudiesRes, categoriesRes, serviceCategoriesRes] = await Promise.all([
         api.getServices({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
-        api.getSolutions({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }),
         api.getProjects({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
         api.getCaseStudies({ page: 1, page_size: 50, sort: 'created_at', order: 'desc' }),
+        api.getSolutionCategories(),
+        api.getServiceCategories(),
       ]);
+
+      const categories = categoriesRes.success && Array.isArray(categoriesRes.data)
+        ? categoriesRes.data.map(category => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description || '',
+            sortOrder: category.sort_order,
+          }))
+        : [];
+      if (categoriesRes.success && categories.length > 0) setSolutionCategories(categories);
+
+      const serviceCategories = serviceCategoriesRes.success && Array.isArray(serviceCategoriesRes.data)
+        ? serviceCategoriesRes.data.map(category => ({
+            id: category.id,
+            name: category.name,
+            slug: category.slug,
+            description: category.description || '',
+            sortOrder: category.sort_order,
+          }))
+        : [];
+      if (serviceCategoriesRes.success && serviceCategories.length > 0) setServiceCategories(serviceCategories);
+
+      let serviceItems = servicesRes.success ? itemsFrom(servicesRes) : [];
+      let servicesHealthy = servicesRes.success;
+      if (serviceCategories.length > 0) {
+        const categoryResponses = await Promise.all(serviceCategories.map(category => api.getServiceCategoryBySlug(category.slug)));
+        if (categoryResponses.every(response => response.success)) {
+          const categoryServiceItems = categoryResponses.flatMap(response => Array.isArray(response.data?.services) ? response.data.services : []);
+          const hasFullServiceFields = categoryServiceItems.every(item => {
+            const service = record(item);
+            return service.short_description !== undefined || service.description !== undefined;
+          });
+          if (hasFullServiceFields) {
+            serviceItems = categoryServiceItems;
+          } else {
+            const fullCategoryResponses = await Promise.all(serviceCategories.map(category => api.getServicesByCategory(category.slug, { page: 1, page_size: 50, sort: 'sort_order', order: 'asc' })));
+            if (fullCategoryResponses.every(response => response.success)) serviceItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+          }
+          serviceItems = [...new Map(serviceItems.map(item => {
+            const service = record(item);
+            return [String(service.id || service.slug), item] as const;
+          })).values()];
+          servicesHealthy = true;
+        }
+      }
+
+      let solutionItems: any[] = [];
+      let solutionsHealthy = false;
+      if (categories.length > 0) {
+        const categoryResponses = await Promise.all(
+          categories.map(category => api.getSolutionCategoryBySlug(category.slug))
+        );
+        if (categoryResponses.every(response => response.success)) {
+          const seen = new Set<string>();
+          const categorySolutionItems = categoryResponses.flatMap(response => Array.isArray(response.data?.solutions) ? response.data.solutions : []);
+          const hasFullSolutionFields = categorySolutionItems.every(item => {
+            const solution = record(item);
+            return solution.short_description !== undefined || solution.description !== undefined;
+          });
+          solutionItems = categorySolutionItems.filter(item => {
+            const id = String(record(item).id || record(item).slug || '');
+            if (seen.has(id)) return false;
+            seen.add(id);
+            return true;
+          });
+          if (!hasFullSolutionFields) {
+            const fullCategoryResponses = await Promise.all(
+              categories.map(category => api.getSolutionsByCategory(category.slug, { page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }))
+            );
+            if (fullCategoryResponses.every(response => response.success)) {
+              solutionItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+            }
+          }
+          solutionItems = [...new Map(solutionItems.map(item => {
+            const solution = record(item);
+            return [String(solution.id || solution.slug), item] as const;
+          })).values()];
+          solutionsHealthy = true;
+        }
+      }
+      if (!solutionsHealthy) {
+        const solutionsRes = await api.getSolutions({ page: 1, page_size: 50, sort: 'sort_order', order: 'asc' });
+        solutionItems = solutionsRes.success ? itemsFrom(solutionsRes) : [];
+        solutionsHealthy = solutionsRes.success;
+      }
 
       let importedCount = 0;
       setDb(prev => {
         const next = { ...prev };
-        const services = servicesRes.success ? itemsFrom(servicesRes).map(normalizeService) : [];
-        const solutions = solutionsRes.success ? itemsFrom(solutionsRes).map(normalizeSolution) : [];
+        const services = serviceItems.map(normalizeService).map(service => {
+          const category = serviceCategories.find(item => item.id === service.categoryId || item.slug === service.categorySlug || item.slug === service.category || item.name === service.category);
+          return category ? { ...service, category: category.name, categorySlug: category.slug, categoryId: category.id } : service;
+        });
+        const solutions = solutionItems.map(normalizeSolution).map(solution => {
+          const category = categories.find(item =>
+            item.id === solution.categoryId || item.slug === solution.categorySlug || item.slug === solution.category || item.name === solution.category
+          );
+          return category
+            ? { ...solution, category: category.name, categorySlug: category.slug, categoryId: category.id }
+            : solution;
+        });
         const projects = projectsRes.success ? itemsFrom(projectsRes).map(normalizeProject) : [];
         const caseStudies = caseStudiesRes.success ? itemsFrom(caseStudiesRes).map(normalizeCaseStudy) : [];
-        if (servicesRes.success) { next.services = services; importedCount += services.length; }
-        if (solutionsRes.success) { next.solutions = solutions; importedCount += solutions.length; }
+        if (servicesHealthy) { next.services = services; importedCount += services.length; }
+        if (solutionsHealthy) { next.solutions = solutions; importedCount += solutions.length; }
         if (projectsRes.success) { next.projects = projects; importedCount += projects.length; }
         if (caseStudiesRes.success) { next.caseStudies = caseStudies; importedCount += caseStudies.length; }
         return next;
       });
 
       setIsSyncing(false);
-      const isHealthy = servicesRes.success || solutionsRes.success || projectsRes.success || caseStudiesRes.success;
+      const isHealthy = servicesHealthy || solutionsHealthy || projectsRes.success || caseStudiesRes.success || categoriesRes.success || serviceCategoriesRes.success;
       if (isHealthy) {
         setApiHealth(prev => ({ ...prev, status: 'online', lastChecked: new Date().toLocaleTimeString() }));
         return { success: true, message: `Synchronized ${importedCount} records from backend API` };
       } else {
         return {
           success: false,
-          message: servicesRes.error || 'Backend API is currently unreachable. Using local storage.',
+          message: servicesRes.error || categoriesRes.error || serviceCategoriesRes.error || 'Backend API is currently unreachable. Using local storage.',
         };
       }
     } catch (err: any) {
@@ -946,6 +1246,16 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         syncWithApi,
         mutationError,
         clearMutationError,
+        getSolutionCategories,
+        loadSolutionCategoryBySlug,
+        createSolutionCategory,
+        updateSolutionCategory,
+        deleteSolutionCategory,
+        getServiceCategories,
+        loadServiceCategoryBySlug,
+        createServiceCategory,
+        updateServiceCategory,
+        deleteServiceCategory,
 
          getServices,
          getServiceBySlug,

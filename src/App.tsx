@@ -122,6 +122,10 @@ const AppContent: React.FC = () => {
     if (path === '/services' || path === '/services/') {
       return <ServicesPage />;
     }
+    if (path.startsWith('/services/category/')) {
+      const categorySlug = path.replace('/services/category/', '').split('/')[0];
+      return <ServicesPage categorySlug={categorySlug} />;
+    }
     if (path.startsWith('/services/')) {
       const slug = path.replace('/services/', '').split('/')[0];
       return <ServiceDetailPage slug={slug} />;
@@ -130,6 +134,10 @@ const AppContent: React.FC = () => {
     // Solutions
     if (path === '/solutions' || path === '/solutions/') {
       return <SolutionsPage />;
+    }
+    if (path.startsWith('/solutions/category/')) {
+      const categorySlug = path.replace('/solutions/category/', '').split('/')[0];
+      return <SolutionsPage categorySlug={categorySlug} />;
     }
     if (path.startsWith('/solutions/')) {
       const slug = path.replace('/solutions/', '').split('/')[0];

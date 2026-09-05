@@ -12,9 +12,20 @@ const iconMap: Record<string, React.ReactNode> = {
   Compass: <Compass className="w-7 h-7" />,
 };
 
-export const ServicesPage: React.FC = () => {
-  const { getServices } = useDatabase();
+export const ServicesPage: React.FC<{ categorySlug?: string }> = ({ categorySlug }) => {
+  const { getServices, getServiceCategories, loadServiceCategoryBySlug } = useDatabase();
   const services = getServices();
+  const serviceCategories = getServiceCategories();
+  const [selectedCategory, setSelectedCategory] = React.useState(categorySlug || 'ALL');
+
+  React.useEffect(() => {
+    setSelectedCategory(categorySlug || 'ALL');
+    if (categorySlug) void loadServiceCategoryBySlug(categorySlug);
+  }, [categorySlug]);
+
+  const filteredServices = selectedCategory === 'ALL'
+    ? services
+    : services.filter(service => (service.categorySlug || service.category?.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) === selectedCategory);
 
   return (
     <div className="w-full bg-[#F8FAFC]">
@@ -32,6 +43,13 @@ export const ServicesPage: React.FC = () => {
             <p className="mt-4 text-lg text-slate-600 leading-relaxed">
               We design, build, and deploy production-grade artificial intelligence systems. From autonomous multi-agent state machines to custom fine-tuned SLMs and high-throughput web applications.
             </p>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {[{ slug: 'ALL', name: 'All Services' }, ...serviceCategories].map(category => (
+                <button key={category.slug} onClick={() => setSelectedCategory(category.slug)} className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${selectedCategory === category.slug ? 'bg-[#0282EB] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -39,7 +57,7 @@ export const ServicesPage: React.FC = () => {
       {/* Services Grid */}
       <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {services.map(service => (
+          {filteredServices.map(service => (
             <div
               key={service.id}
               className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all duration-200 flex flex-col justify-between group"

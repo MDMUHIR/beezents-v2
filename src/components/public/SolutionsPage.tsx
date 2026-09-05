@@ -3,17 +3,21 @@ import { Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { ArrowRight, Bot, Zap, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
 
-export const SolutionsPage: React.FC = () => {
-  const { getSolutions } = useDatabase();
+export const SolutionsPage: React.FC<{ categorySlug?: string }> = ({ categorySlug }) => {
+  const { getSolutions, getSolutionCategories, loadSolutionCategoryBySlug } = useDatabase();
   const solutions = getSolutions();
+  const solutionCategories = getSolutionCategories();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>(categorySlug || 'ALL');
 
-  const categories = ['ALL', ...Array.from(new Set(solutions.map(s => s.category)))];
+  React.useEffect(() => {
+    setSelectedCategory(categorySlug || 'ALL');
+    if (categorySlug) void loadSolutionCategoryBySlug(categorySlug);
+  }, [categorySlug]);
 
   const filteredSolutions = selectedCategory === 'ALL'
     ? solutions
-    : solutions.filter(s => s.category === selectedCategory);
+    : solutions.filter(s => (s.categorySlug || s.category.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) === selectedCategory);
 
   return (
     <div className="w-full bg-[#F8FAFC]">
@@ -35,17 +39,17 @@ export const SolutionsPage: React.FC = () => {
 
           {/* Category Filter Pills */}
           <div className="mt-10 flex flex-wrap items-center gap-2">
-            {categories.map(cat => (
+            {[{ slug: 'ALL', name: 'All Solutions' }, ...solutionCategories].map(category => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={category.slug}
+                onClick={() => setSelectedCategory(category.slug)}
                 className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                  selectedCategory === cat
+                  selectedCategory === category.slug
                     ? 'bg-[#0282EB] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
                 }`}
               >
-                {cat === 'ALL' ? 'All Solutions' : cat}
+                {category.name}
               </button>
             ))}
           </div>

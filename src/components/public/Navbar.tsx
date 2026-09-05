@@ -56,12 +56,14 @@ function MagneticButton({
 
 export const Navbar: React.FC = () => {
   const { path, navigate } = useRouter();
-  const { auth } = useDatabase();
+  const { auth, getSolutionCategories, getServiceCategories } = useDatabase();
   const { openDemo } = useModals();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [servicesDropdown, setServicesDropdown] = useState(false);
   const [solutionsDropdown, setSolutionsDropdown] = useState(false);
+  const solutionCategories = getSolutionCategories();
+  const serviceCategories = getServiceCategories();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,32 +86,19 @@ export const Navbar: React.FC = () => {
       label: "Services",
       href: "/services",
       hasDropdown: true,
-      subItems: [
-        { label: "AI Agents", href: "/services/autonomous-agents" },
-        { label: "AI Automation", href: "/services/workflow-automation" },
-        { label: "RAG Systems", href: "/services/rag-knowledge-systems" },
-        { label: "Data & Analytics", href: "/services/data-analytics" },
-      ],
+      subItems: serviceCategories.map(category => ({
+        label: category.name,
+        href: `/services/category/${category.slug}`,
+      })),
     },
     {
       label: "Solutions",
       href: "/solutions",
       hasDropdown: true,
-      subItems: [
-        {
-          label: "E-commerce Automation",
-          href: "/solutions/ecommerce-automation",
-        },
-        {
-          label: "SaaS Intelligent Support",
-          href: "/solutions/saas-customer-support",
-        },
-        {
-          label: "Business Operations",
-          href: "/solutions/business-operations",
-        },
-        { label: "Custom AI Systems", href: "/solutions/custom-enterprise-ai" },
-      ],
+      subItems: solutionCategories.map(category => ({
+        label: category.name,
+        href: `/solutions/category/${category.slug}`,
+      })),
     },
     { label: "Case Studies", href: "/case-studies" },
     { label: "AI Lab", href: "/#ai-lab" },
@@ -294,17 +283,42 @@ export const Navbar: React.FC = () => {
                 <a
                   href={item.href}
                   onClick={(e) => {
-                    handleNavClick(e, item.href);
-                    setMobileMenuOpen(false);
+                    if (item.hasDropdown) {
+                      e.preventDefault();
+                      if (item.label === "Solutions") setSolutionsDropdown(open => !open);
+                      else setServicesDropdown(open => !open);
+                    } else {
+                      handleNavClick(e, item.href);
+                      setMobileMenuOpen(false);
+                    }
                   }}
-                  className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive(item.href)
                       ? "bg-blue-50 text-[#0282EB] font-semibold"
                       : "text-[#1F2937] hover:bg-slate-50"
                   }`}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
                 </a>
+                {item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : servicesDropdown)) && (
+                  <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
+                    {item.subItems?.map(sub => (
+                      <a
+                        key={sub.href}
+                        href={sub.href}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate(sub.href);
+                          setMobileMenuOpen(false);
+                        }}
+                        className="block px-3 py-2 rounded-lg text-xs text-slate-600 hover:bg-blue-50 hover:text-[#0282EB]"
+                      >
+                        {sub.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
