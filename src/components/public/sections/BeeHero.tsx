@@ -13,10 +13,10 @@ import {
   MessageCircle,
   CheckCircle2,
 } from "lucide-react";
-import sphereImage from "../../assets/images/BEEZENT LOGO.png";
-import mascotImage from "../../assets/images/ai_bee_mascot_1788367806249.jpg";
-import { useRouter } from "../../context/RouterContext";
-import { BeezentLogo } from "../shared/BeezentLogo";
+import sphereImage from "../../../assets/images/BEEZENT LOGO.png";
+import mascotImage from "../../../assets/images/ai_bee_mascot_1788367806249.jpg";
+import { useRouter } from "../../../context/RouterContext";
+import { BeezentLogo } from "../../shared/BeezentLogo";
 
 interface BeeHeroProps {
   onOpenDemoModal: () => void;
@@ -167,38 +167,11 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
             <div className="lg:col-span-8 p-6 sm:p-10 lg:p-14 flex flex-col justify-between z-20 bg-white/95 lg:bg-transparent">
               <div className="space-y-6">
                 {/* Segmented mode switch — replaces the hidden text-link toggle with a visible control */}
-                <div className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100/70 p-1 text-[11px] font-semibold tracking-wide">
-                  {(["building", "automate"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setHeadlineMode(mode)}
-                      className={`relative px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
-                        headlineMode === mode
-                          ? "text-white"
-                          : "text-slate-500 hover:text-slate-800"
-                      }`}
-                    >
-                      {headlineMode === mode && (
-                        <motion.span
-                          layoutId="mode-pill"
-                          className="absolute inset-0 rounded-full bg-[#2469E5]"
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-                      <span className="relative z-10">
-                        {mode === "building" ? "Building" : "Automation"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              
 
                 {/* Headline with a directional crossfade between the two modes */}
                 <div
-                  className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.85rem] font-extrabold text-[#22262B] tracking-tight leading-[1.06] uppercase"
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.25rem] xl:text-[3.85rem] font-extrabold text-[#22262B] tracking-tight leading-[1.06] uppercase mt-16 mb-8"
                   style={{
                     fontFamily: "'Orbitron', 'Chakra Petch', sans-serif",
                   }}
@@ -297,8 +270,6 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                   ONLINE
                 </span>
               </div>
-
-             
             </div>
 
             {/* ========================================================
@@ -317,7 +288,6 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                     rotateY: sphereRotateY,
                     transformStyle: "preserve-3d",
                   }}
-                  
                   transition={{
                     duration: 6,
                     repeat: Infinity,
@@ -398,9 +368,6 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
                   </svg>
                 </motion.div>
 
-              
-
-           
                 <motion.div
                   animate={{ y: [-4, 4, -4], x: [2, -2, 2] }}
                   transition={{

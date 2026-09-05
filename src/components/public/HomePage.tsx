@@ -1,6 +1,6 @@
 import React from "react";
 import { useModals } from "../../context/ModalContext";
-import { BeeHero } from "../public/BeeHero";
+import { BeeHero } from "./sections/BeeHero";
 import { TrustLogos } from "./sections/TrustLogos";
 import { ServicesSection } from "./sections/ServicesSection";
 import { CaseStudiesSection } from "./sections/CaseStudiesSection";
