@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter, Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
+import { DemoVideoEmbed } from '../shared/DemoVideoEmbed';
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,7 +13,8 @@ import {
   Bot,
   Workflow,
   Sparkles,
-  Database
+  Database,
+  Video
 } from 'lucide-react';
 
 export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -125,6 +127,21 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 {solution.fullDescription}
               </p>
             </div>
+
+            {/* Demo Video */}
+            {solution.demoVideoUrl && (
+              <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 space-y-5">
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <Video className="w-6 h-6 text-[#0282EB]" />
+                  <span>Demo Video</span>
+                </h2>
+                <DemoVideoEmbed
+                  url={solution.demoVideoUrl}
+                  type={solution.demoVideoType}
+                  title={`${solution.title} demo video`}
+                />
+              </div>
+            )}
 
             {/* Problem & Approach */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
