@@ -21,6 +21,9 @@ import {
 } from '../types';
 import { initialDatabase } from '../data/seedData';
 import { api } from '../api';
+import { buildEntityFormData, hasFiles } from '../lib/api/multipart';
+import { cmsUploadPath, type EntityKind } from '../lib/api/cms';
+import { parseApiError } from '../lib/api/errors';
 
 interface AuthSession {
   user: AdminUser | null;
@@ -145,9 +148,27 @@ interface DatabaseContextType {
   getSettings: () => SiteSettings;
   updateSettings: (data: Partial<SiteSettings>) => void;
 
+  // Combined entity + media upload saves
+  saveEntityWithUpload: (
+    kind: EntityKind,
+    id: string | null,
+    payload: unknown,
+    files?: Record<string, File | null> | null,
+    onProgress?: (fraction: number) => void,
+  ) => Promise<EntitySaveResult>;
+  refreshAdminData: () => Promise<void>;
+
   // System
   resetDatabaseToSeed: () => void;
   resetToSeedData: () => void;
+}
+
+export interface EntitySaveResult {
+  success: boolean;
+  status: number;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+  code?: 'auth' | 'forbidden' | 'not-found' | 'conflict' | 'too-large' | 'validation' | 'server' | 'network' | 'unknown';
 }
 
 const STORAGE_KEY = 'beezent_db_v2';
@@ -280,13 +301,14 @@ const normalizeSolution = (raw: unknown): Solution => {
     : String(categoryValue || value(item, 'category_name') || ''));
   const categorySlug = nestedCategories[0]?.slug || String(value(item, 'category_slug') || value(categoryObject, 'slug') || (categoryName ? slugify(categoryName) : ''));
   const categoryIds = nestedCategories.map(category => category.id).filter(Boolean);
+  const image = record(value(item, 'image', 'image_media'));
   return {
     id: String(value(item, 'id') || ''), title: String(value(item, 'name', 'title') || ''), slug: String(value(item, 'slug') || ''), category: categoryName, categorySlug, categoryId: categoryIds[0] || String(value(item, 'category_id') || value(categoryObject, 'id') || '') || undefined, categoryIds, categories: nestedCategories,
     shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), description: String(value(item, 'description') || ''), fullDescription: value(item, 'description', 'full_description', 'fullDescription'),
     businessProblem: String(value(item, 'business_problem', 'businessProblem') || ''), problemSolved: value(item, 'business_problem', 'businessProblem'), solution: String(value(item, 'solution') || ''), howItWorks: value(item, 'solution', 'how_it_works', 'howItWorks'),
     features: list(item, 'features'), benefits: list(item, 'benefits'), workflow: list(item, 'workflow').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
-    integrations: list(item, 'integrations'), technologies: list(item, 'technologies'), visual: value(item, 'visual'), relatedProjectIds: list(item, 'related_project_ids', 'relatedProjectIds'), ctaText: value(item, 'cta_text', 'ctaText'),
-    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), status: contentStatus(item), featured: Boolean(value(item, 'featured') || false), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+    integrations: list(item, 'integrations'), technologies: list(item, 'technologies'), visual: value(item, 'visual') || value(item, 'image_url') || value(image, 'url', 'public_url'), relatedProjectIds: list(item, 'related_project_ids', 'relatedProjectIds'), ctaText: value(item, 'cta_text', 'ctaText'),
+    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), imageMediaId: value(item, 'image_media_id') || null, imageUrl: value(item, 'image_url') || null, demoVideoMediaId: value(item, 'demo_video_media_id') || null, demoVideoUrl: value(item, 'demo_video_url') || null, demoVideoType: (value(item, 'demo_video_type') as Solution['demoVideoType']) || null, status: contentStatus(item), featured: Boolean(value(item, 'featured') || false), sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
   };
 };
 const normalizeProject = (raw: unknown): Project => {
@@ -300,16 +322,19 @@ const normalizeProject = (raw: unknown): Project => {
   const categorySlug = nestedCategories[0]?.slug || String(value(item, 'category_slug') || value(categoryObject, 'slug') || (categoryName ? slugify(categoryName) : ''));
   const categoryIds = nestedCategories.map(category => category.id).filter(Boolean);
   const description = String(value(item, 'description', 'full_description', 'fullDescription', 'overview') || '');
+  const coverMedia = record(value(item, 'cover_media'));
   return {
     id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), shortDescription: String(value(item, 'short_description', 'shortDescription') || ''), fullDescription: description, category: categoryName, categorySlug, categoryId: categoryIds[0] || String(value(item, 'category_id') || value(categoryObject, 'id') || '') || undefined, categoryIds, categories: nestedCategories,
     projectType: String(value(item, 'project_type', 'projectType') || 'Other') as ProjectType, industry: String(value(item, 'industry') || ''), client: value(item, 'client_name', 'clientName', 'client'), clientName: value(item, 'client_name', 'clientName', 'client'), timeline: value(item, 'timeline'),
-    coverImage: assetUrl(value(item, 'cover_image', 'coverImage')), gallery: list(item, 'gallery').map(assetUrl), technologies: list(item, 'technologies'), servicesUsed: list(item, 'services_used', 'servicesUsed'), features: list(item, 'features'), projectUrl: value(item, 'project_url', 'projectUrl'), liveUrl: value(item, 'live_url', 'liveUrl'), githubUrl: value(item, 'github_url', 'githubUrl'), completionDate: String(value(item, 'completion_date', 'completionDate') || ''), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), overview: String(value(item, 'overview') || description), challenge: String(value(item, 'challenge') || ''), solution: String(value(item, 'solution') || ''), implementation: String(value(item, 'implementation') || ''), results: list(item, 'results'), relatedServiceIds: list(item, 'related_service_ids', 'relatedServiceIds'), relatedCaseStudyId: value(item, 'related_case_study_id', 'relatedCaseStudyId'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), ogImage: assetUrl(value(item, 'og_image', 'ogImage')), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+    coverImage: assetUrl(value(item, 'cover_image', 'coverImage') || value(coverMedia, 'url', 'public_url')), gallery: list(item, 'gallery').map(assetUrl), technologies: list(item, 'technologies'), servicesUsed: list(item, 'services_used', 'servicesUsed'), features: list(item, 'features'), projectUrl: value(item, 'project_url', 'projectUrl'), liveUrl: value(item, 'live_url', 'liveUrl'), githubUrl: value(item, 'github_url', 'githubUrl'), completionDate: String(value(item, 'completion_date', 'completionDate') || ''), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), overview: String(value(item, 'overview') || description), challenge: String(value(item, 'challenge') || ''), solution: String(value(item, 'solution') || ''), implementation: String(value(item, 'implementation') || ''), results: list(item, 'results'), relatedServiceIds: list(item, 'related_service_ids', 'relatedServiceIds'), relatedCaseStudyId: value(item, 'related_case_study_id', 'relatedCaseStudyId'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), ogImage: assetUrl(value(item, 'og_image', 'ogImage')),
+    coverMediaId: value(item, 'cover_media_id') || null, demoVideoMediaId: value(item, 'demo_video_media_id') || null, demoVideoUrl: value(item, 'demo_video_url') || null, demoVideoType: (value(item, 'demo_video_type') as Project['demoVideoType']) || null,
+    createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
   };
 };
 const normalizeCaseStudy = (raw: unknown): CaseStudy => {
-  const item = record(raw); const testimonial = record(value(item, 'testimonial')); const project = record(value(item, 'project'));
+  const item = record(raw); const testimonial = record(value(item, 'testimonial')); const project = record(value(item, 'project')); const image = record(value(item, 'image', 'image_media', 'cover_media'));
   return {
-    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), client: String(value(item, 'client', 'client_name') || value(project, 'title') || ''), industry: String(value(item, 'industry') || ''), summary: String(value(item, 'summary') || ''), challenge: String(value(item, 'challenge') || ''), objectives: list(item, 'objectives'), solution: String(value(item, 'solution') || ''), architectureDescription: String(value(item, 'architecture_description', 'architectureDescription') || ''), architectureDetails: value(item, 'architecture_description', 'architectureDescription'), implementation: String(value(item, 'implementation') || ''), workflowSteps: list(item, 'workflow_steps', 'workflowSteps'), technologies: list(item, 'technologies'), process: list(item, 'process'), measurableResults: list(item, 'metrics', 'measurable_results', 'measurableResults'), testimonial: { quote: String(value(testimonial, 'quote') || ''), author: String(value(testimonial, 'author') || ''), role: String(value(testimonial, 'role') || ''), company: String(value(testimonial, 'company') || ''), avatar: value(testimonial, 'avatar') }, coverImage: assetUrl(value(item, 'cover_image', 'coverImage')), gallery: list(item, 'gallery').map(assetUrl), relatedProjectId: value(item, 'project_id', 'related_project_id', 'relatedProjectId'), relatedServices: list(item, 'related_services', 'relatedServices'), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), publishDate: iso(item, 'publish_date', 'publishDate'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
+    id: String(value(item, 'id') || ''), title: String(value(item, 'title') || ''), slug: String(value(item, 'slug') || ''), client: String(value(item, 'client', 'client_name') || value(project, 'title') || ''), industry: String(value(item, 'industry') || ''), summary: String(value(item, 'summary') || ''), challenge: String(value(item, 'challenge') || ''), objectives: list(item, 'objectives'), solution: String(value(item, 'solution') || ''), architectureDescription: String(value(item, 'architecture_description', 'architectureDescription') || ''), architectureDetails: value(item, 'architecture_description', 'architectureDescription'), implementation: String(value(item, 'implementation') || ''), workflowSteps: list(item, 'workflow_steps', 'workflowSteps'), technologies: list(item, 'technologies'), process: list(item, 'process'), measurableResults: list(item, 'metrics', 'measurable_results', 'measurableResults'), testimonial: { quote: String(value(testimonial, 'quote') || ''), author: String(value(testimonial, 'author') || ''), role: String(value(testimonial, 'role') || ''), company: String(value(testimonial, 'company') || ''), avatar: value(testimonial, 'avatar') }, coverImage: assetUrl(value(item, 'cover_image', 'coverImage', 'image_url') || value(image, 'url', 'public_url')), gallery: list(item, 'gallery').map(assetUrl), relatedProjectId: value(item, 'project_id', 'related_project_id', 'relatedProjectId'), relatedServices: list(item, 'related_services', 'relatedServices'), featured: Boolean(value(item, 'featured') || false), status: contentStatus(item), publishDate: iso(item, 'publish_date', 'publishDate'), seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), imageMediaId: value(item, 'image_media_id', 'cover_media_id') || null, createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
   };
 };
 const normalizeLead = (raw: unknown): Inquiry => {
@@ -695,15 +720,18 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const categoryResponses = await Promise.all(serviceCategories.map(category => api.getServiceCategoryBySlug(category.slug)));
         if (categoryResponses.every(response => response.success)) {
           const categoryServiceItems = categoryResponses.flatMap(response => Array.isArray(response.data?.services) ? response.data.services : []);
-          const hasFullServiceFields = categoryServiceItems.every(item => {
+          const hasFullServiceFields = categoryServiceItems.length > 0 && categoryServiceItems.every(item => {
             const service = record(item);
             return service.short_description !== undefined || service.description !== undefined;
           });
           if (hasFullServiceFields) {
             serviceItems = categoryServiceItems;
-          } else {
+          } else if (categoryServiceItems.length > 0) {
             const fullCategoryResponses = await Promise.all(serviceCategories.map(category => api.getServicesByCategory(category.slug, { page: 1, page_size: 50, sort: 'sort_order', order: 'asc' })));
-            if (fullCategoryResponses.every(response => response.success)) serviceItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+            if (fullCategoryResponses.every(response => response.success)) {
+              const byCategory = fullCategoryResponses.flatMap(response => itemsFrom(response));
+              if (byCategory.length > 0) serviceItems = byCategory;
+            }
           }
           serviceItems = [...new Map(serviceItems.map(item => {
             const service = record(item);
@@ -719,15 +747,18 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const categoryResponses = await Promise.all(projectCategories.map(category => api.getProjectCategoryBySlug(category.slug)));
         if (categoryResponses.every(response => response.success)) {
           const categoryProjectItems = categoryResponses.flatMap(response => Array.isArray(response.data?.projects) ? response.data.projects : []);
-          const hasFullProjectFields = categoryProjectItems.every(item => {
+          const hasFullProjectFields = categoryProjectItems.length > 0 && categoryProjectItems.every(item => {
             const project = record(item);
             return project.short_description !== undefined || project.description !== undefined;
           });
           if (hasFullProjectFields) {
             projectItems = categoryProjectItems;
-          } else {
+          } else if (categoryProjectItems.length > 0) {
             const fullCategoryResponses = await Promise.all(projectCategories.map(category => api.getProjectsByCategory(category.slug, { page: 1, page_size: 50, sort: 'created_at', order: 'desc' })));
-            if (fullCategoryResponses.every(response => response.success)) projectItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+            if (fullCategoryResponses.every(response => response.success)) {
+              const byCategory = fullCategoryResponses.flatMap(response => itemsFrom(response));
+              if (byCategory.length > 0) projectItems = byCategory;
+            }
           }
           projectItems = [...new Map(projectItems.map(item => {
             const project = record(item);
@@ -745,30 +776,32 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         );
         if (categoryResponses.every(response => response.success)) {
           const seen = new Set<string>();
-          const categorySolutionItems = categoryResponses.flatMap(response => Array.isArray(response.data?.solutions) ? response.data.solutions : []);
-          const hasFullSolutionFields = categorySolutionItems.every(item => {
-            const solution = record(item);
-            return solution.short_description !== undefined || solution.description !== undefined;
-          });
-          solutionItems = categorySolutionItems.filter(item => {
+          const dedupe = (items: any[]) => items.filter(item => {
             const id = String(record(item).id || record(item).slug || '');
             if (seen.has(id)) return false;
             seen.add(id);
             return true;
           });
-          if (!hasFullSolutionFields) {
+          const categorySolutionItems = dedupe(categoryResponses.flatMap(response => Array.isArray(response.data?.solutions) ? response.data.solutions : []));
+          const hasFullSolutionFields = categorySolutionItems.length > 0 && categorySolutionItems.every(item => {
+            const solution = record(item);
+            return solution.short_description !== undefined || solution.description !== undefined;
+          });
+          solutionItems = categorySolutionItems;
+          if (!hasFullSolutionFields && categorySolutionItems.length > 0) {
             const fullCategoryResponses = await Promise.all(
               categories.map(category => api.getSolutionsByCategory(category.slug, { page: 1, page_size: 50, sort: 'sort_order', order: 'asc' }))
             );
             if (fullCategoryResponses.every(response => response.success)) {
-              solutionItems = fullCategoryResponses.flatMap(response => itemsFrom(response));
+              const byCategory = dedupe(fullCategoryResponses.flatMap(response => itemsFrom(response)));
+              if (byCategory.length > 0) solutionItems = byCategory;
             }
           }
           solutionItems = [...new Map(solutionItems.map(item => {
             const solution = record(item);
             return [String(solution.id || solution.slug), item] as const;
           })).values()];
-          solutionsHealthy = true;
+          solutionsHealthy = categorySolutionItems.length > 0;
         }
       }
       if (!solutionsHealthy) {
@@ -839,8 +872,11 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     void checkApiHealth();
-    void syncWithApi();
-    void api.getMe().then(response => {
+    // The public sync must finish before the admin sync so the richer admin
+    // snapshot (drafts included) is always the last writer. Otherwise the
+    // published-only public sync can overwrite draft entities and they
+    // disappear from the admin lists.
+    void syncWithApi().then(() => api.getMe().then(response => {
       if (!response.success || !response.data) return;
       const user = normalizeUser(response.data);
       if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
@@ -849,7 +885,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       setAuth({ user, token: null, isAuthenticated: true });
       void syncAdminWithApi();
-    });
+    }));
   }, []);
 
   // Persist DB updates to localStorage
@@ -1217,6 +1253,62 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   };
 
+  // ---------------- Combined entity + media upload saves ----------------
+  const upsertRawEntity = (kind: EntityKind, raw: unknown) => {
+    setDb(prev => {
+      switch (kind) {
+        case 'project': {
+          const entity = normalizeProject(raw);
+          return { ...prev, projects: [entity, ...prev.projects.filter(item => item.id !== entity.id)] };
+        }
+        case 'solution': {
+          const entity = normalizeSolution(raw);
+          return { ...prev, solutions: [entity, ...prev.solutions.filter(item => item.id !== entity.id)] };
+        }
+        case 'case-study': {
+          const entity = normalizeCaseStudy(raw);
+          return { ...prev, caseStudies: [entity, ...prev.caseStudies.filter(item => item.id !== entity.id)] };
+        }
+        default:
+          return prev;
+      }
+    });
+  };
+
+  const saveEntityWithUpload = async (
+    kind: EntityKind,
+    id: string | null,
+    payload: unknown,
+    files: Record<string, File | null> | null = null,
+    onProgress?: (fraction: number) => void,
+  ): Promise<EntitySaveResult> => {
+    const formData = buildEntityFormData(payload, files);
+    const response = await api.sendMultipart(cmsUploadPath(kind, id), formData, {
+      method: id ? 'PATCH' : 'POST',
+      onProgress,
+      timeoutMs: hasFiles(files) ? 30 * 60 * 1000 : 2 * 60 * 1000,
+    });
+
+    if (!response.success) {
+      const parsed = parseApiError(response.status, response.data);
+      return {
+        success: false,
+        status: response.status,
+        error: parsed.message,
+        fieldErrors: parsed.fieldErrors,
+        code: parsed.code,
+      };
+    }
+
+    if (response.data) upsertRawEntity(kind, response.data);
+    void syncAdminWithApi();
+    return { success: true, status: response.status };
+  };
+
+  const refreshAdminData = async (): Promise<void> => {
+    await syncAdminWithApi();
+  };
+
   // ---------------- Blog Posts ----------------
   const getBlogPosts = (includeDrafts = false): BlogPost[] => {
     return includeDrafts ? db.blogPosts : db.blogPosts.filter(b => b.status === 'PUBLISHED');
@@ -1540,6 +1632,9 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         getSettings,
         updateSettings,
+
+        saveEntityWithUpload,
+        refreshAdminData,
 
         resetDatabaseToSeed,
         resetToSeedData: resetDatabaseToSeed,

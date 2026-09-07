@@ -1,5 +1,7 @@
 /** Small, cookie-authenticated client for the Beezents FastAPI backend. */
 
+import { parseApiError } from '../lib/api/errors';
+
 export const DEFAULT_API_BASE_URL = 'http://localhost:8000';
 export const API_BASE_STORAGE_KEY = 'beezent_api_base_url';
 // Kept as an export for callers from older UI code. Sessions are cookies now.
@@ -316,6 +318,95 @@ export class ApiClient {
   public getAdminFile(id: string) { return this.request<unknown>(`/api/v1/admin/files/${encodeURIComponent(id)}`); }
   public updateAdminFile(id: string, data: unknown) { return this.request<unknown>(`/api/v1/admin/files/${encodeURIComponent(id)}`, { method: 'PATCH', body: data }); }
   public deleteAdminFile(id: string) { return this.request(`/api/v1/admin/files/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+
+  /**
+   * Sends a multipart/form-data request (used by the combined entity media
+   * upload endpoints).
+   *
+   * The browser generates the multipart boundary, so this method never sets a
+   * `Content-Type` header. When `onProgress` is provided an XMLHttpRequest is
+   * used so the real upload progress can be reported (lengthComputable).
+   */
+  public sendMultipart(
+    path: string,
+    formData: FormData,
+    options: {
+      method?: 'POST' | 'PATCH';
+      onProgress?: (fraction: number) => void;
+      /** Defaults to 15 minutes so large video uploads are not cut short. */
+      timeoutMs?: number;
+    } = {},
+  ): Promise<ApiResponse<unknown>> {
+    const { method = 'POST', onProgress, timeoutMs = 15 * 60 * 1000 } = options;
+    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+
+    if (!onProgress) {
+      return this.request(url, { method, body: formData, isFormData: true, timeoutMs });
+    }
+
+    return new Promise<ApiResponse<unknown>>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      xhr.withCredentials = true;
+      xhr.timeout = timeoutMs;
+      xhr.responseType = 'text';
+
+      let progressReported = false;
+      if (xhr.upload) {
+        xhr.upload.onprogress = (event) => {
+          if (!event.lengthComputable) return;
+          progressReported = true;
+          const fraction = event.total > 0 ? Math.min(1, event.loaded / event.total) : 0;
+          onProgress(fraction);
+        };
+      }
+
+      xhr.onload = () => {
+        onProgress(1);
+        const status = xhr.status;
+        let data: unknown = null;
+        const text = xhr.responseText || '';
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = text;
+          }
+        }
+        if (status >= 200 && status < 300) {
+          resolve({ success: true, data, status });
+          return;
+        }
+        const message = parseApiError(status, data).message;
+        resolve({ success: false, error: message, data, status });
+      };
+
+      xhr.onerror = () => {
+        resolve({
+          success: false,
+          error: `Unable to connect to ${this.baseUrl}. Ensure the backend is running and CORS allows this frontend origin.`,
+          status: 0,
+        });
+      };
+      xhr.ontimeout = () => {
+        resolve({
+          success: false,
+          error: `Connection timed out while reaching ${url}${progressReported ? ' during upload' : ''}.`,
+          status: 0,
+        });
+      };
+      xhr.onabort = () => {
+        resolve({ success: false, error: 'The upload was cancelled.', status: 0 });
+      };
+
+      try {
+        xhr.send(formData);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'The upload could not be started.';
+        resolve({ success: false, error: message, status: 0 });
+      }
+    });
+  }
 }
 
 export const api = new ApiClient();

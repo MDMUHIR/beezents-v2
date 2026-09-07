@@ -71,12 +71,22 @@ export interface Solution {
   integrations: string[];
   technologies: string[];
   visual?: string;
+  icon?: string;
   relatedProjectIds?: string[];
   ctaText?: string;
   seoTitle?: string;
   seoDescription?: string;
+
+  // Media passthrough (combined entity + media upload API).
+  imageMediaId?: string | null;
+  imageUrl?: string | null;
+  demoVideoMediaId?: string | null;
+  demoVideoUrl?: string | null;
+  demoVideoType?: 'upload' | 'youtube' | null;
+
   status: ContentStatus;
   featured: boolean;
+  sortOrder?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -163,6 +173,13 @@ export interface Project {
   seoTitle?: string;
   seoDescription?: string;
   ogImage?: string;
+
+  // Media passthrough (combined entity + media upload API).
+  coverMediaId?: string | null;
+  demoVideoMediaId?: string | null;
+  demoVideoUrl?: string | null;
+  demoVideoType?: 'upload' | 'youtube' | null;
+
   createdAt: string;
   updatedAt: string;
 }
@@ -200,6 +217,10 @@ export interface CaseStudy {
   publishDate: string;
   seoTitle?: string;
   seoDescription?: string;
+
+  // Media passthrough (combined entity + media upload API).
+  imageMediaId?: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
