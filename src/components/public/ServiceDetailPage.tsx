@@ -1,16 +1,16 @@
 import React from 'react';
-import { useRouter, Link } from '../../context/RouterContext';
+import { Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
+import { SafeImage } from '../shared/SafeImage';
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Cpu,
-  Layers,
-  ShieldCheck,
   Zap,
   Bot,
   Sparkles,
+  Layers,
   Code2,
   Compass,
   ChevronRight
@@ -71,12 +71,12 @@ export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Breadcrumb & Navigation */}
       <div className="bg-white border-b border-slate-200 py-3.5">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
-          <Link href="/services" className="hover:text-[#0282EB] flex items-center gap-1">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500 min-w-0">
+          <Link href="/services" className="hover:text-[#0282EB] flex items-center gap-1 shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" /> Services
           </Link>
-          <span>/</span>
-          <span className="text-slate-900 font-semibold">{service.title}</span>
+          <span className="shrink-0">/</span>
+          <span className="text-slate-900 font-semibold truncate min-w-0">{service.title}</span>
         </div>
       </div>
 
@@ -118,11 +118,10 @@ export const ServiceDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             {service.heroVisual && (
               <div className="lg:col-span-4">
                 <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 aspect-4/3">
-                  <img
+                  <SafeImage
                     src={service.heroVisual}
                     alt={service.title}
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
                   />
                 </div>
               </div>

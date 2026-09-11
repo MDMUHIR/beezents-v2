@@ -93,10 +93,7 @@ await dynamicGraph.execute(incomingLead);`,
           <span className="text-xs sm:text-[13px] font-bold font-mono uppercase tracking-widest text-[#0282EB]">
             AI LAB
           </span>
-          <h2
-            className="mt-2 text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#111827] tracking-tight leading-tight uppercase"
-            style={{ fontFamily: "'Space Grotesk', 'Chakra Petch', sans-serif" }}
-          >
+          <h2 className="mt-2 text-3xl sm:text-4xl lg:text-[42px] font-bold text-[#111827] tracking-tight leading-tight uppercase font-orbitron">
             EXPLORE EXPERIMENTAL AI ARCHITECTURES
           </h2>
           <p className="mt-3 text-base sm:text-lg text-[#1F2937] font-normal leading-relaxed">
@@ -133,10 +130,7 @@ await dynamicGraph.execute(incomingLead);`,
                 {current.tag}
               </div>
 
-              <h3
-                className="text-2xl font-bold text-[#111827] tracking-tight mb-3"
-                style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-              >
+              <h3 className="text-2xl font-bold text-[#111827] tracking-tight mb-3 font-display">
                 {current.title}
               </h3>
 

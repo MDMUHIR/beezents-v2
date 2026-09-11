@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   AppDatabase,
   Service,
@@ -29,6 +29,8 @@ interface AuthSession {
   user: AdminUser | null;
   token: string | null;
   isAuthenticated: boolean;
+  /** True while the existing session is being re-validated against the backend. */
+  isSessionValidating: boolean;
 }
 
 export interface ApiHealthState {
@@ -51,7 +53,7 @@ interface DatabaseContextType {
   api: typeof api;
   apiBaseUrl: string;
   setApiBaseUrl: (url: string) => void;
-  resetApiBaseUrl: () => void;
+  resetApiBaseUrl: () => string;
   apiHealth: ApiHealthState;
   checkApiHealth: () => Promise<void>;
   isSyncing: boolean;
@@ -386,7 +388,12 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       user: null,
       token: null,
       isAuthenticated: false,
+      isSessionValidating: true,
   });
+
+  // Login brute-force throttle (exponential backoff between attempts).
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const lastAttemptRef = useRef(0);
 
   // Remote API Integration State
   const [apiBaseUrl, setApiBaseUrlState] = useState<string>(() => api.getBaseUrl());
@@ -636,6 +643,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const defaultUrl = api.resetBaseUrl();
     setApiBaseUrlState(defaultUrl);
     checkApiHealth();
+    return defaultUrl;
   };
 
   // Check health against configured API base URL (GET /health, GET /api/v1/health, GET /api/v1/health/db)
@@ -872,21 +880,51 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     void checkApiHealth();
+    // Validate any persisted session against the backend before trusting it.
     // The public sync must finish before the admin sync so the richer admin
     // snapshot (drafts included) is always the last writer. Otherwise the
     // published-only public sync can overwrite draft entities and they
     // disappear from the admin lists.
     void syncWithApi().then(() => api.getMe().then(response => {
-      if (!response.success || !response.data) return;
+      if (!response.success || !response.data) {
+        // No valid session cookie: discard any stale persisted auth state so
+        // the admin guard cannot be satisfied from localStorage alone.
+        setAuth({ user: null, token: null, isAuthenticated: false, isSessionValidating: false });
+        localStorage.removeItem(AUTH_KEY);
+        return;
+      }
       const user = normalizeUser(response.data);
       if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
         void api.logout();
+        setAuth({ user: null, token: null, isAuthenticated: false, isSessionValidating: false });
+        localStorage.removeItem(AUTH_KEY);
         return;
       }
-      setAuth({ user, token: null, isAuthenticated: true });
+      setAuth({ user, token: null, isAuthenticated: true, isSessionValidating: false });
       void syncAdminWithApi();
     }));
   }, []);
+
+  // Auto-logout after 30 minutes of inactivity while signed in.
+  const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+  useEffect(() => {
+    if (!auth.isAuthenticated) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const resetIdle = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        logout();
+      }, IDLE_TIMEOUT_MS);
+    };
+    const events: (keyof WindowEventMap)[] = ['mousemove', 'mousedown', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetIdle, { passive: true }));
+    resetIdle();
+    return () => {
+      clearTimeout(timer);
+      events.forEach(event => window.removeEventListener(event, resetIdle));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth.isAuthenticated]);
 
   // Persist DB updates to localStorage
   useEffect(() => {
@@ -913,17 +951,34 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   ): Promise<{ success: boolean; error?: string; source?: 'api' | 'local' }> => {
     const trimmedEmail = email.trim().toLowerCase();
 
+    // Client-side brute-force throttle with exponential backoff. The backend
+    // enforces its own rate limits; this only slows down rapid retries.
+    const now = Date.now();
+    const backoffMs = Math.min(2000 * 2 ** failedAttempts, 60000);
+    const elapsed = now - lastAttemptRef.current;
+    if (elapsed < backoffMs) {
+      const waitSeconds = Math.ceil((backoffMs - elapsed) / 1000);
+      return {
+        success: false,
+        error: `Too many attempts. Please wait ${waitSeconds} second${waitSeconds === 1 ? '' : 's'} and try again.`,
+      };
+    }
+
+    lastAttemptRef.current = now;
     const apiRes = await api.login({ email: trimmedEmail, password: pass });
     if (!apiRes.success || !apiRes.data) {
+      setFailedAttempts(prev => prev + 1);
       return { success: false, error: apiRes.error || 'Invalid email or password.' };
     }
 
     const user = normalizeUser(apiRes.data);
     if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      setFailedAttempts(prev => prev + 1);
       void api.logout();
       return { success: false, error: 'Your account does not have CMS access.' };
     }
-    setAuth({ user, token: null, isAuthenticated: true });
+    setFailedAttempts(0);
+    setAuth({ user, token: null, isAuthenticated: true, isSessionValidating: false });
     setApiHealth(prev => ({ ...prev, status: 'online' }));
     void syncAdminWithApi();
     return { success: true, source: 'api' };
@@ -935,6 +990,7 @@ export const DatabaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       user: null,
       token: null,
       isAuthenticated: false,
+      isSessionValidating: false,
     });
     localStorage.removeItem(AUTH_KEY);
   };

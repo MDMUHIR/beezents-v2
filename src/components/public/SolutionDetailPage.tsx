@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter, Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { DemoVideoEmbed } from '../shared/DemoVideoEmbed';
+import { SafeImage } from '../shared/SafeImage';
 import {
   ArrowLeft,
   ArrowRight,
@@ -63,12 +64,12 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200 py-3.5">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
-          <Link href="/solutions" className="hover:text-[#0282EB] flex items-center gap-1">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500 min-w-0">
+          <Link href="/solutions" className="hover:text-[#0282EB] flex items-center gap-1 shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" /> Solutions
           </Link>
-          <span>/</span>
-          <span className="text-slate-900 font-semibold">{solution.title}</span>
+          <span className="shrink-0">/</span>
+          <span className="text-slate-900 font-semibold truncate min-w-0">{solution.title}</span>
         </div>
       </div>
 
@@ -103,11 +104,10 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             {solution.visual && (
               <div className="lg:col-span-4">
                 <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 aspect-4/3">
-                  <img
+                  <SafeImage
                     src={solution.visual}
                     alt={solution.title}
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
                   />
                 </div>
               </div>
@@ -124,7 +124,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200 space-y-4">
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">System Specification</h2>
               <p className="text-slate-700 leading-relaxed whitespace-pre-line text-base">
-                {solution.fullDescription}
+                {solution.fullDescription || solution.description}
               </p>
             </div>
 
@@ -149,7 +149,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 <div className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-2">The Operational Deficit</div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Legacy Flaw</h3>
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  {solution.problemSolved}
+                  {solution.problemSolved || solution.businessProblem}
                 </p>
               </div>
 
@@ -157,7 +157,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 <div className="text-xs font-bold uppercase tracking-wider text-[#0282EB] mb-2">The Autonomous Solution</div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">Beezent Architecture</h3>
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  {solution.howItWorks}
+                  {solution.howItWorks || solution.solution}
                 </p>
               </div>
             </div>
@@ -170,19 +170,19 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
               </h2>
 
               <div className="bg-[#F8FAFC] rounded-2xl p-6 border border-slate-200 space-y-4 font-mono text-xs text-slate-800">
-                <div className="p-3 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
-                  <span>[Input Event]: Inbound webhook / user interaction</span>
-                  <span className="text-emerald-600 font-bold">Validated</span>
+                <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 break-words">[Input Event]: Inbound webhook / user interaction</span>
+                  <span className="shrink-0 text-emerald-600 font-bold">Validated</span>
                 </div>
                 <div className="text-center text-slate-400">↓ Pydantic Input Schema Sanitization</div>
-                <div className="p-3 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
-                  <span>[Agent Router]: Multi-vector semantic embedding search</span>
-                  <span className="text-[#0282EB] font-bold">&lt; 15ms</span>
+                <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 break-words">[Agent Router]: Multi-vector semantic embedding search</span>
+                  <span className="shrink-0 text-[#0282EB] font-bold">&lt; 15ms</span>
                 </div>
                 <div className="text-center text-slate-400">↓ Tool-calling with strict state enforcement</div>
-                <div className="p-3 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
-                  <span>[Action Execution]: Transactional ERP/CRM webhook update</span>
-                  <span className="text-indigo-600 font-bold">Guaranteed Idempotent</span>
+                <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="min-w-0 break-words">[Action Execution]: Transactional ERP/CRM webhook update</span>
+                  <span className="shrink-0 text-indigo-600 font-bold">Guaranteed Idempotent</span>
                 </div>
               </div>
             </div>
@@ -191,7 +191,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-6 tracking-tight">Key Capabilities</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {solution.features.map((feat, i) => (
+                {solution.features?.map((feat, i) => (
                   <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-[#F8FAFC] border border-slate-100">
                     <CheckCircle2 className="w-5 h-5 text-[#0282EB] shrink-0 mt-0.5" />
                     <span className="text-sm font-medium text-slate-800">{feat}</span>
@@ -204,7 +204,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-6 tracking-tight">Verifiable ROI Metrics</h2>
               <div className="space-y-3.5">
-                {solution.benefits.map((b, i) => (
+                {solution.benefits?.map((b, i) => (
                   <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-blue-50/40 border border-blue-100">
                     <Zap className="w-5 h-5 text-[#0282EB] shrink-0 mt-0.5" />
                     <span className="text-sm font-medium text-slate-800">{b}</span>
@@ -223,7 +223,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 <span>Supported Integrations</span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {solution.integrations.map(integ => (
+                {solution.integrations?.map(integ => (
                   <span
                     key={integ}
                     className="text-xs font-semibold bg-[#F8FAFC] text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200"
@@ -241,7 +241,7 @@ export const SolutionDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 <span>Technical Stack</span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {solution.technologies.map(tech => (
+                {solution.technologies?.map(tech => (
                   <span
                     key={tech}
                     className="text-xs font-semibold bg-[#F8FAFC] text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200"

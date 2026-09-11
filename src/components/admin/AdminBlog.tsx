@@ -85,6 +85,7 @@ export const AdminBlog: React.FC = () => {
         avatar: formData.authorAvatar,
       },
       publishedAt: new Date().toISOString(),
+      publishDate: new Date().toISOString().split('T')[0],
       featured: formData.featured,
       status: formData.status,
     };

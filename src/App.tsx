@@ -13,7 +13,6 @@ import { Footer } from './components/public/Footer';
 import { HomePage } from './components/public/HomePage';
 import { HowItWorksPage } from './components/public/HowItWorksPage';
 import { PricingPage } from './components/public/PricingPage';
-import { TargoPage } from './components/targo/TargoPage';
 import { ServicesPage } from './components/public/ServicesPage';
 import { ServiceDetailPage } from './components/public/ServiceDetailPage';
 import { SolutionsPage } from './components/public/SolutionsPage';
@@ -26,24 +25,34 @@ import { AboutPage } from './components/public/AboutPage';
 import { TeamPage } from './components/public/TeamPage';
 import { TeamMemberDetailPage } from './components/public/TeamMemberDetailPage';
 import { ContactPage } from './components/public/ContactPage';
+import { LegalPage } from './components/public/LegalPage';
 import { BlogPage } from './components/public/BlogPage';
 import { BlogPostPage } from './components/public/BlogPostPage';
 import { ReadingProgressBar } from './components/shared/ReadingProgressBar';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Admin Components
-import { AdminLayout } from './components/admin/AdminLayout';
-import { AdminLogin } from './components/admin/AdminLogin';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-import { AdminProjects } from './components/admin/AdminProjects';
-import { AdminCaseStudies } from './components/admin/AdminCaseStudies';
-import { AdminServices } from './components/admin/AdminServices';
-import { AdminSolutions } from './components/admin/AdminSolutions';
-import { AdminInquiries } from './components/admin/AdminInquiries';
-import { AdminMedia } from './components/admin/AdminMedia';
-import { AdminSettings } from './components/admin/AdminSettings';
-import { AdminBackendNotice } from './components/admin/AdminBackendNotice';
-import { AdminTeamMembers } from './components/admin/AdminTeamMembers';
+// Targo single-page experience (lazy-loaded)
+const TargoPage = React.lazy(() => import('./components/targo/TargoPage'));
+
+// Admin Components (lazy-loaded — CMS screens load only when navigating to /admin)
+const AdminLayout = React.lazy(() => import('./components/admin/AdminLayout'));
+const AdminLogin = React.lazy(() => import('./components/admin/AdminLogin'));
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
+const AdminProjects = React.lazy(() => import('./components/admin/AdminProjects'));
+const AdminCaseStudies = React.lazy(() => import('./components/admin/AdminCaseStudies'));
+const AdminServices = React.lazy(() => import('./components/admin/AdminServices'));
+const AdminSolutions = React.lazy(() => import('./components/admin/AdminSolutions'));
+const AdminTeamMembers = React.lazy(() => import('./components/admin/AdminTeamMembers'));
+const AdminInquiries = React.lazy(() => import('./components/admin/AdminInquiries'));
+const AdminMedia = React.lazy(() => import('./components/admin/AdminMedia'));
+const AdminSettings = React.lazy(() => import('./components/admin/AdminSettings'));
+const AdminBackendNotice = React.lazy(() => import('./components/admin/AdminBackendNotice'));
+
+const AdminFallback = () => (
+  <div className="min-h-screen flex items-center justify-center text-sm text-slate-500 bg-[#F8FAFC]">
+    Loading admin console...
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const { path } = useRouter();
@@ -57,13 +66,30 @@ const AppContent: React.FC = () => {
 
   // ================= ADMIN ROUTING =================
   if (path === '/admin/login') {
-    return <AdminLogin />;
+    return (
+      <React.Suspense fallback={<AdminFallback />}>
+        <AdminLogin />
+      </React.Suspense>
+    );
   }
 
   if (path.startsWith('/admin')) {
-    // Auth Guard
+    // Auth Guard: wait for the persisted session to be re-validated against
+    // the backend before showing the console or the login screen.
+    if (auth.isSessionValidating) {
+      return (
+        <React.Suspense fallback={<AdminFallback />}>
+          <AdminFallback />
+        </React.Suspense>
+      );
+    }
+
     if (!auth.isAuthenticated) {
-      return <AdminLogin />;
+      return (
+        <React.Suspense fallback={<AdminFallback />}>
+          <AdminLogin />
+        </React.Suspense>
+      );
     }
 
     let adminChild: React.ReactNode = <AdminDashboard />;
@@ -94,14 +120,20 @@ const AppContent: React.FC = () => {
       adminChild = <AdminDashboard />;
     }
 
-    return <AdminLayout>{adminChild}</AdminLayout>;
+    return (
+      <React.Suspense fallback={<AdminFallback />}>
+        <AdminLayout>{adminChild}</AdminLayout>
+      </React.Suspense>
+    );
   }
 
   // ================= TARGO SINGLE-PAGE MODE =================
   if (path === '/targo' || path === '/targo/') {
     return (
       <div className="relative min-h-screen">
-        <TargoPage />
+        <React.Suspense fallback={<div className="min-h-screen" />}>
+          <TargoPage />
+        </React.Suspense>
       </div>
     );
   }
@@ -187,6 +219,14 @@ const AppContent: React.FC = () => {
     // Contact
     if (path === '/contact' || path === '/contact/') {
       return <ContactPage />;
+    }
+
+    // Legal
+    if (path === '/privacy' || path === '/privacy/') {
+      return <LegalPage kind="privacy" />;
+    }
+    if (path === '/terms' || path === '/terms/') {
+      return <LegalPage kind="terms" />;
     }
 
     // Blog

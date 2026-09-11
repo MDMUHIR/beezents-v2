@@ -481,23 +481,23 @@ export const PricingPage: React.FC = () => {
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[640px]">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-left border-collapse min-w-[560px]">
               <thead>
                 <tr className="border-b-2 border-slate-200 text-sm">
-                  <th className="py-4 px-6 font-bold text-slate-900 w-1/3">Capability</th>
-                  <th className="py-4 px-6 font-bold text-slate-900">Starter</th>
-                  <th className="py-4 px-6 font-bold text-[#0282EB] bg-blue-50/50 rounded-t-xl">Growth</th>
-                  <th className="py-4 px-6 font-bold text-slate-900">Custom Enterprise</th>
+                  <th className="py-4 px-4 font-bold text-slate-900 w-1/3 sticky left-0 bg-white z-10">Capability</th>
+                  <th className="py-4 px-4 font-bold text-slate-900">Starter</th>
+                  <th className="py-4 px-4 font-bold text-[#0282EB] bg-blue-50/50">Growth</th>
+                  <th className="py-4 px-4 font-bold text-slate-900">Custom Enterprise</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs sm:text-sm text-slate-700">
                 {comparisonRows.map((row, i) => (
                   <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-4 px-6 font-semibold text-slate-900">{row.feature}</td>
-                    <td className="py-4 px-6">{row.starter}</td>
-                    <td className="py-4 px-6 font-medium text-[#0282EB] bg-blue-50/30">{row.growth}</td>
-                    <td className="py-4 px-6">{row.custom}</td>
+                    <td className="py-4 px-4 font-semibold text-slate-900 sticky left-0 bg-white">{row.feature}</td>
+                    <td className="py-4 px-4">{row.starter}</td>
+                    <td className="py-4 px-4 font-medium text-[#0282EB] bg-blue-50/30">{row.growth}</td>
+                    <td className="py-4 px-4">{row.custom}</td>
                   </tr>
                 ))}
               </tbody>

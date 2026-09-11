@@ -25,6 +25,20 @@ requests same-origin, which is required by the backend's `SameSite=lax` cookie.
 For a separately hosted production frontend, use a reverse proxy on the same
 site or configure HTTPS-compatible cookie/CORS settings on the backend.
 
+## Deploying to Production
+
+1. Set the backend origin for the build:
+   `VITE_API_BASE_URL=https://api.beezents.com` (in `.env.production` or the
+   deployment environment). The backend CORS allowlist must include the
+   deployed frontend origin (`https://beezents.com`, `https://www.beezents.com`).
+2. Build: `npm run build`. The output in `dist/` is fully static.
+3. Serve `dist/` with SPA fallback — deep links like `/services/ai-agents` must
+   resolve to `index.html`. The build emits `dist/404.html` for static hosts
+   that support it; hosts with rewrite rules should map `/*` → `/index.html`.
+4. `dist/assets/` is split into stable vendor chunks (`react`, `motion`,
+   `icons`) and lazy-loaded CMS chunks, so public pages load fast and admin
+   screens fetch on demand.
+
 Public CMS content is loaded from `/api/v1/projects`, `/case-studies`,
 `/services`, `/solutions`, and `/team-members`. Staff CMS screens use the
 corresponding `/api/v1/admin/*` endpoints, including leads, team members, and

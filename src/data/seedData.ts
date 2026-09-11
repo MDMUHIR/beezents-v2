@@ -1138,18 +1138,18 @@ Too many engineering teams present status updates centered on 'number of prompts
     tagline: 'AI-Powered Products, Intelligent Automation & Scalable Software',
     logoUrl: '/logo/beezent-logo.svg',
     faviconUrl: '/logo/beezent-mark.svg',
-    contactEmail: 'contact@beezent.ai',
-    contactPhone: '+1 (800) 512-BEZZ',
+    contactEmail: 'hello@beezents.com',
+    contactPhone: '+1 (415) 555-0132',
     address: '548 Market Street, Suite 9200, San Francisco, CA 94104',
     socialLinks: {
-      twitter: 'https://twitter.com/beezent_ai',
-      linkedin: 'https://linkedin.com/company/the-beezent',
-      github: 'https://github.com/the-beezent',
-      youtube: 'https://youtube.com/@beezent'
+      twitter: 'https://x.com/beezents',
+      linkedin: 'https://linkedin.com/company/beezents',
+      github: 'https://github.com/beezents',
+      youtube: 'https://youtube.com/@beezents'
     },
-    footerText: '© 2025 The Beezent Inc. All rights reserved. Engineering AI agents and enterprise automation systems.',
-    defaultSeoTitle: 'The Beezent | AI Agency, Automation & Software Engineering',
-    defaultSeoDescription: 'Beezent builds AI-powered products, intelligent automation, and scalable software systems for ambitious businesses. Explore our AI agents, case studies, and engineering solutions.',
+    footerText: '© 2026 BEEZENTS. All rights reserved.',
+    defaultSeoTitle: 'BEEZENTS | AI Automation Agency',
+    defaultSeoDescription: 'BEEZENTS designs and deploys custom AI agents, automation workflows, and intelligent data systems that help businesses scale faster and operate smarter.',
     googleAnalyticsId: 'G-BZNT2026AI'
   }
 };

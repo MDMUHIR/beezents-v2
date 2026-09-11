@@ -69,7 +69,7 @@ const ENDPOINTS: EndpointDef[] = [
     description: 'Register a user account; new accounts always receive the user role',
     defaultPayload: {
       email: 'user@example.com',
-      password: 'strongpass123',
+      password: 'ReplaceWithStrongPassword',
       full_name: 'Jane Doe',
     },
   },
@@ -79,10 +79,10 @@ const ENDPOINTS: EndpointDef[] = [
     method: 'POST',
     path: '/api/v1/auth/login',
     name: 'Login',
-    description: 'Authenticate with email and password; the server sets an HTTP-only session cookie',
+description: 'Authenticate with email and password; the server sets an HTTP-only session cookie',
     defaultPayload: {
-      email: 'MBadmin@beezents.com',
-      password: 'Bee@MB',
+      email: 'admin@example.com',
+      password: 'ReplaceWithYourPassword',
     },
   },
   {

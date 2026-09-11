@@ -192,7 +192,7 @@ export const HowItWorksPage: React.FC = () => {
                   </span>
                   <span className="text-[11px] opacity-75 font-medium">{step.duration}</span>
                 </div>
-                <div className="font-bold text-sm truncate">{step.title}</div>
+                <div className="font-bold text-sm leading-snug line-clamp-2 min-h-[2.5rem]">{step.title}</div>
               </button>
             ))}
           </div>

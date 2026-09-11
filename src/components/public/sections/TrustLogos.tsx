@@ -3,7 +3,7 @@ import { ArrowUpRight, CheckCircle2 } from "lucide-react";
 
 const logos = [
   {
-    name: "logoipsum",
+    name: "Nexora",
     mark: (
       <svg viewBox="0 0 32 32" fill="none" className="h-7 w-7">
         <circle
@@ -24,7 +24,7 @@ const logos = [
     ),
   },
   {
-    name: "logoipsum",
+    name: "Quantia",
     mark: (
       <svg viewBox="0 0 32 32" fill="none" className="h-7 w-7">
         <rect x="4" y="4" width="10" height="10" rx="2" fill="currentColor" />
@@ -35,7 +35,7 @@ const logos = [
     ),
   },
   {
-    name: "LOGOIPSUM",
+    name: "HELIOS",
     mark: (
       <svg viewBox="0 0 32 32" fill="none" className="h-7 w-7">
         <circle cx="16" cy="16" r="13" fill="currentColor" />
@@ -44,7 +44,7 @@ const logos = [
     ),
   },
   {
-    name: "logoipsum",
+    name: "Vantage",
     mark: (
       <svg viewBox="0 0 32 32" fill="none" className="h-7 w-7">
         <path
@@ -63,7 +63,7 @@ const logos = [
     ),
   },
   {
-    name: "logoipsum",
+    name: "Orbita",
     mark: (
       <svg viewBox="0 0 32 32" fill="none" className="h-7 w-7">
         <circle
@@ -81,7 +81,7 @@ const logos = [
 
 export const TrustLogos: React.FC = () => {
   return (
-    <section className="relative overflow-hidden border-y border-[#E5E7EB] bg-white ">
+    <section className="relative overflow-hidden border-y border-[#E5E7EB] bg-white">
       {/* Subtle brand glow */}
       <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-96 -translate-x-1/2 rounded-full bg-[#0282EB]/[0.035] blur-3xl" />
 
@@ -118,7 +118,7 @@ export const TrustLogos: React.FC = () => {
 
           {/* Logos */}
           <div className="flex min-w-0 flex-1 items-center">
-            <div className="flex w-full items-center justify-between gap-7 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-10 lg:gap-8">
+            <div className="flex w-full flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:gap-x-10 lg:flex-nowrap lg:justify-between lg:gap-8">
               {logos.map((logo, index) => (
                 <div
                   key={`${logo.name}-${index}`}

@@ -125,11 +125,17 @@ export const AboutPage: React.FC = () => {
             {teamMembers.map(member => (
               <div
                 key={member.name}
-                className="bg-[#F8FAFC] rounded-3xl p-8 border border-slate-200 flex flex-col justify-between"
+                className="bg-[#F8FAFC] rounded-3xl p-8 border border-slate-200 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl"
               >
                 <div>
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden mb-6 border-2 border-white shadow-md">
-                    <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden mb-6 border-2 border-white shadow-md bg-blue-50">
+                    {member.avatar ? (
+                      <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl font-black text-[#0282EB]">
+                        {member.name.charAt(0)}
+                      </div>
+                    )}
                   </div>
                   <h3 className="text-lg font-bold text-slate-900">{member.name}</h3>
                   <div className="text-xs font-semibold text-[#0282EB] mt-0.5 mb-3">{member.role}</div>

@@ -184,21 +184,25 @@ export const Navbar: React.FC = () => {
                   className="relative group py-2"
                   onMouseEnter={() => setDropdown(true)}
                   onMouseLeave={() => setDropdown(false)}
+                  onFocus={() => setDropdown(true)}
+                  onBlur={() => setDropdown(false)}
                 >
                   <a
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item.href)}
-                    className={`inline-flex items-center gap-1 transition-colors hover:text-[#0282EB] ${
+                    aria-haspopup="true"
+                    aria-expanded={isDropdownOpen}
+                    className={`inline-flex items-center gap-1 transition-colors hover:text-[#0282EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
                       active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
                     }`}
                   >
                     <span>{item.label}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] group-hover:text-[#0282EB] transition-transform group-hover:rotate-180" />
+                    <ChevronDown className={`w-3.5 h-3.5 text-[#94A3B8] group-hover:text-[#0282EB] transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
                   </a>
 
                   {/* Dropdown Menu */}
                   {isDropdownOpen && (
-                    <div className="absolute top-full -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl border border-slate-100 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="absolute top-full -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl border border-slate-100 z-50">
                       {item.subItems?.map((sub) => (
                         <a
                           key={sub.label}
@@ -208,7 +212,7 @@ export const Navbar: React.FC = () => {
                             navigate(sub.href);
                             setDropdown(false);
                           }}
-                          className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors"
+                          className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
                         >
                           {sub.label}
                         </a>
@@ -234,7 +238,7 @@ export const Navbar: React.FC = () => {
                 <a
                   href={item.href}
                   onClick={(e) => handleNavClick(e, item.href)}
-                  className={`transition-colors hover:text-[#0282EB] relative py-1 ${
+                  className={`transition-colors hover:text-[#0282EB] relative py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
                     active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
                   }`}
                 >
@@ -310,8 +314,19 @@ export const Navbar: React.FC = () => {
                   <span>{item.label}</span>
                   {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
                 </a>
-                {item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : item.label === "Projects" ? projectsDropdown : servicesDropdown)) && (
+{item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : item.label === "Projects" ? projectsDropdown : servicesDropdown)) && (
                   <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
+                    <a
+                      href={item.href}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(item.href);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="block px-3 py-2 rounded-lg text-xs font-bold text-[#0282EB] hover:bg-blue-50"
+                    >
+                      Explore all {item.label} <span aria-hidden="true">→</span>
+                    </a>
                     {item.subItems?.map(sub => (
                       <a
                         key={sub.href}

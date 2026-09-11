@@ -25,7 +25,7 @@ export const TeamMemberDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
 
   return (
     <div className="w-full bg-[#F8FAFC]">
-      <section className="border-b border-slate-200 bg-white py-12">
+      <section className="border-b border-slate-200 bg-white py-4">
         <div className="mx-auto max-w-[1100px] px-4 sm:px-6 lg:px-8"><Link href="/team" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-[#0282EB]"><ArrowLeft className="h-3.5 w-3.5" /> Team</Link></div>
       </section>
       <section className="mx-auto grid max-w-[1100px] grid-cols-1 gap-12 px-4 py-16 sm:px-6 lg:grid-cols-12 lg:px-8 lg:py-24">

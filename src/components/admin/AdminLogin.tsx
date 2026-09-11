@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useRouter, Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
 import { BeezentLogo } from '../shared/BeezentLogo';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle, Loader2, KeyRound } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
   const { navigate } = useRouter();
-  const { login, auth } = useDatabase();
+  const { login } = useDatabase();
 
-  const [email, setEmail] = useState('MBadmin@beezents.com');
-  const [password, setPassword] = useState('Bee@MB');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,12 +26,6 @@ export const AdminLogin: React.FC = () => {
     } else {
       setError(res.error || 'Authentication failed. Please verify your credentials.');
     }
-  };
-
-  const handleQuickFill = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('Bee@MB');
-    setError(null);
   };
 
   return (
@@ -53,7 +47,7 @@ export const AdminLogin: React.FC = () => {
         {/* Login Form Card */}
         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl space-y-6">
           {error && (
-            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5">
+            <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5" role="alert">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -61,16 +55,18 @@ export const AdminLogin: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <label htmlFor="admin-email" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Work Email Address
               </label>
               <div className="relative">
                 <input
+                  id="admin-email"
                   type="email"
                   required
+                  autoComplete="username"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@beezent.ai"
+                  placeholder="name@beezents.com"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-[#0282EB] focus:ring-2 focus:ring-blue-100 text-xs text-slate-800 outline-hidden transition-all"
                 />
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -78,13 +74,15 @@ export const AdminLogin: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <label htmlFor="admin-password" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Password
               </label>
               <div className="relative">
                 <input
+                  id="admin-password"
                   type="password"
                   required
+                  autoComplete="current-password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -113,28 +111,10 @@ export const AdminLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Development seed account. Enable SEED_DEV_ADMIN in the backend first. */}
-          <div className="pt-4 border-t border-slate-100">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-[#0282EB]" />
-               <span>Development Seed Account</span>
-            </div>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('MBadmin@beezents.com')}
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-50 hover:bg-blue-50/70 border border-slate-200 text-xs flex items-center justify-between transition-colors"
-              >
-                <div>
-                  <div className="font-bold text-slate-800">Development Admin</div>
-                  <div className="text-[10px] text-slate-500">MBadmin@beezents.com</div>
-                </div>
-                <span className="text-[10px] bg-blue-100 text-[#0282EB] px-2 py-0.5 rounded-sm font-bold">
-                  All Perms
-                </span>
-              </button>
-
-            </div>
+          <div className="pt-4 border-t border-slate-100 text-center">
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Access is restricted to authorized staff. Sessions expire automatically after inactivity.
+            </p>
           </div>
         </div>
 

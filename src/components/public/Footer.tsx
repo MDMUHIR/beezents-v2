@@ -1,25 +1,30 @@
 import React from 'react';
 import { Link } from '../../context/RouterContext';
+import { useDatabase } from '../../context/DatabaseContext';
 import { BeezentLogo } from '../shared/BeezentLogo';
-import { Shield, ArrowUpRight } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const { getSettings } = useDatabase();
+  const settings = getSettings();
+  const social = settings.socialLinks ?? { twitter: '', linkedin: '', github: '' };
+
   return (
     <footer className="relative bg-[#0B0F19] text-slate-400 overflow-hidden pt-16 sm:pt-20 pb-12 border-t border-slate-800">
       {/* Subtle radial glow in background */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-[#0282EB]/15 blur-[140px] pointer-events-none rounded-full" />
 
       <div className="relative max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Main 4-Column Grid matching prompt specification */}
+
+        {/* Main 4-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-14 border-b border-slate-800">
-          
+
           {/* Column 1: BEEZENTS (lg:col-span-5) */}
           <div className="lg:col-span-5 space-y-5">
             <Link href="/" className="inline-block" aria-label="BEEZENTS Home">
               <BeezentLogo variant="white" size="md" />
             </Link>
-            
+
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               BEEZENTS is a premium AI automation agency building autonomous agents, deterministic workflows, and intelligent data solutions for modern enterprise scale.
             </p>
@@ -28,11 +33,11 @@ export const Footer: React.FC = () => {
             <div className="flex items-center gap-3 pt-2 text-slate-400">
               {/* X / Twitter */}
               <a
-                href="https://x.com/beezents"
+                href={social.twitter || 'https://x.com/beezents'}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center hover:text-[#0282EB] hover:border-[#0282EB]/40 hover:bg-slate-800 transition-colors"
-                aria-label="Twitter"
+                aria-label="Twitter / X"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -41,7 +46,7 @@ export const Footer: React.FC = () => {
 
               {/* LinkedIn */}
               <a
-                href="https://linkedin.com/company/beezents"
+                href={social.linkedin || 'https://linkedin.com/company/beezents'}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center hover:text-[#0282EB] hover:border-[#0282EB]/40 hover:bg-slate-800 transition-colors"
@@ -54,7 +59,7 @@ export const Footer: React.FC = () => {
 
               {/* GitHub */}
               <a
-                href="https://github.com/beezents"
+                href={social.github || 'https://github.com/beezents'}
                 target="_blank"
                 rel="noreferrer"
                 className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center hover:text-[#0282EB] hover:border-[#0282EB]/40 hover:bg-slate-800 transition-colors"
@@ -75,31 +80,28 @@ export const Footer: React.FC = () => {
 
           {/* Column 2: Services (lg:col-span-2) */}
           <div className="lg:col-span-2 space-y-4">
-            <h4
-              className="text-xs font-bold uppercase tracking-wider text-white font-mono"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
               SERVICES
             </h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/services/autonomous-agents" className="hover:text-[#0282EB] transition-colors">
+                <Link href="/services/ai-agent-development" className="hover:text-[#0282EB] transition-colors">
                   AI Agents
                 </Link>
               </li>
               <li>
-                <Link href="/services/workflow-automation" className="hover:text-[#0282EB] transition-colors">
+                <Link href="/services/ai-automation" className="hover:text-[#0282EB] transition-colors">
                   AI Automation
                 </Link>
               </li>
               <li>
-                <Link href="/services/rag-knowledge-systems" className="hover:text-[#0282EB] transition-colors">
-                  RAG Systems
+                <Link href="/services/custom-ai-solutions" className="hover:text-[#0282EB] transition-colors">
+                  Custom AI Solutions
                 </Link>
               </li>
               <li>
-                <Link href="/services/data-analytics" className="hover:text-[#0282EB] transition-colors">
-                  Data & Analytics
+                <Link href="/services/ai-integration" className="hover:text-[#0282EB] transition-colors">
+                  AI Integration
                 </Link>
               </li>
             </ul>
@@ -107,31 +109,28 @@ export const Footer: React.FC = () => {
 
           {/* Column 3: Solutions (lg:col-span-2) */}
           <div className="lg:col-span-2 space-y-4">
-            <h4
-              className="text-xs font-bold uppercase tracking-wider text-white font-mono"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
               SOLUTIONS
             </h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/solutions/ecommerce-automation" className="hover:text-[#0282EB] transition-colors">
-                  E-commerce
+                <Link href="/solutions/ai-customer-support" className="hover:text-[#0282EB] transition-colors">
+                  Customer Support
                 </Link>
               </li>
               <li>
-                <Link href="/solutions/saas-customer-support" className="hover:text-[#0282EB] transition-colors">
-                  SaaS
+                <Link href="/solutions/ai-sales-agent" className="hover:text-[#0282EB] transition-colors">
+                  Sales Agent
                 </Link>
               </li>
               <li>
-                <Link href="/solutions/business-operations" className="hover:text-[#0282EB] transition-colors">
-                  Operations
+                <Link href="/solutions/ai-workflow-automation" className="hover:text-[#0282EB] transition-colors">
+                  Workflow Automation
                 </Link>
               </li>
               <li>
-                <Link href="/solutions/custom-enterprise-ai" className="hover:text-[#0282EB] transition-colors">
-                  Custom AI
+                <Link href="/solutions/ai-lead-qualification" className="hover:text-[#0282EB] transition-colors">
+                  Lead Qualification
                 </Link>
               </li>
             </ul>
@@ -139,10 +138,7 @@ export const Footer: React.FC = () => {
 
           {/* Column 4: Company (lg:col-span-3) */}
           <div className="lg:col-span-3 space-y-4">
-            <h4
-              className="text-xs font-bold uppercase tracking-wider text-white font-mono"
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
               COMPANY
             </h4>
             <ul className="space-y-2.5 text-sm">
@@ -157,8 +153,13 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/#ai-lab" className="hover:text-[#0282EB] transition-colors">
-                  AI Lab
+                <Link href="/how-it-works" className="hover:text-[#0282EB] transition-colors">
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="hover:text-[#0282EB] transition-colors">
+                  Pricing
                 </Link>
               </li>
               <li>
@@ -182,13 +183,13 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar: Copyright & Legal */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-500">
-          <p>© 2026 BEEZENTS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} BEEZENTS. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <Link href="/about" className="hover:text-slate-300 transition-colors">
+            <Link href="/privacy" className="hover:text-slate-300 transition-colors">
               Privacy Policy
             </Link>
             <span>·</span>
-            <Link href="/about" className="hover:text-slate-300 transition-colors">
+            <Link href="/terms" className="hover:text-slate-300 transition-colors">
               Terms of Service
             </Link>
           </div>

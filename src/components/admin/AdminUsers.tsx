@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDatabase } from '../../context/DatabaseContext';
-import { AdminUser, AdminRole } from '../../types';
+import { AdminUser, AdminRole, UserRole } from '../../types';
 import {
   Plus,
   Search,
@@ -18,7 +18,7 @@ export const AdminUsers: React.FC = () => {
   const users = getUsers();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<{ name: string; email: string; role: UserRole; password: string }>({
     name: '',
     email: '',
     role: AdminRole.ADMIN,
@@ -33,7 +33,7 @@ export const AdminUsers: React.FC = () => {
       name: newUser.name.trim(),
       email: newUser.email.trim(),
       role: newUser.role,
-      password: newUser.password.trim() || 'admin123',
+      status: 'ACTIVE',
     });
 
     setNewUser({
@@ -224,7 +224,7 @@ export const AdminUsers: React.FC = () => {
                 </label>
                 <select
                   value={newUser.role}
-                  onChange={e => setNewUser({ ...newUser, role: e.target.value as AdminRole })}
+                  onChange={e => setNewUser({ ...newUser, role: e.target.value as UserRole })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:border-[#0282EB] outline-hidden"
                 >
                   <option value={AdminRole.SUPER_ADMIN}>Super Admin (Full System Privileges)</option>
@@ -239,7 +239,7 @@ export const AdminUsers: React.FC = () => {
                 </label>
                 <input
                   type="password"
-                  placeholder="Default: admin123"
+                  placeholder="Temporary password"
                   value={newUser.password}
                   onChange={e => setNewUser({ ...newUser, password: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"

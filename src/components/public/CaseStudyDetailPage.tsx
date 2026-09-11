@@ -1,18 +1,13 @@
 import React from 'react';
-import { useRouter, Link } from '../../context/RouterContext';
+import { Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
+import { SafeImage } from '../shared/SafeImage';
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Cpu,
-  Layers,
-  ShieldCheck,
-  Zap,
-  TrendingUp,
-  Workflow,
   Quote,
-  Building
 } from 'lucide-react';
 
 export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
@@ -60,12 +55,12 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
     <div className="w-full bg-[#F8FAFC]">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200 py-3.5">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500">
-          <Link href="/case-studies" className="hover:text-[#0282EB] flex items-center gap-1">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-slate-500 min-w-0">
+          <Link href="/case-studies" className="hover:text-[#0282EB] flex items-center gap-1 shrink-0">
             <ArrowLeft className="w-3.5 h-3.5" /> Case Studies
           </Link>
-          <span>/</span>
-          <span className="text-slate-900 font-semibold">{caseStudy.client}</span>
+          <span className="shrink-0">/</span>
+          <span className="text-slate-900 font-semibold truncate min-w-0">{caseStudy.client}</span>
         </div>
       </div>
 
@@ -93,7 +88,7 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
 
               {/* Verified Result Metrics */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-100">
-                {caseStudy.measurableResults.map((res, i) => (
+                {caseStudy.measurableResults?.map((res, i) => (
                   <div key={i} className="bg-[#F8FAFC] p-4 rounded-xl border border-slate-200">
                     <div className="text-2xl font-black text-[#0282EB]">{res.metric}</div>
                     <div className="text-xs font-bold text-slate-800 mt-1">{res.label}</div>
@@ -104,11 +99,10 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
 
             <div className="lg:col-span-4">
               <div className="rounded-3xl overflow-hidden shadow-xl border border-slate-200 aspect-4/3">
-                <img
+                <SafeImage
                   src={caseStudy.coverImage}
                   alt={caseStudy.title}
                   className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
                 />
               </div>
             </div>
@@ -134,7 +128,7 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
             <div className="bg-white rounded-3xl p-8 lg:p-10 border border-slate-200">
               <h2 className="text-2xl font-bold text-slate-900 mb-6 tracking-tight">Engagement Objectives</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {caseStudy.objectives.map((obj, i) => (
+                {caseStudy.objectives?.map((obj, i) => (
                   <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-[#F8FAFC] border border-slate-100">
                     <CheckCircle2 className="w-5 h-5 text-[#0282EB] shrink-0 mt-0.5" />
                     <span className="text-sm font-medium text-slate-800">{obj}</span>
@@ -152,13 +146,14 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
               </p>
               <div className="p-6 bg-[#F8FAFC] rounded-2xl border border-slate-200 mt-4 space-y-2">
                 <div className="text-xs font-bold text-slate-800 uppercase tracking-wider">System Architecture:</div>
-                <p className="text-xs text-slate-600 font-mono leading-relaxed">
-                  {caseStudy.architectureDetails}
+                <p className="text-xs text-slate-600 font-mono leading-relaxed whitespace-pre-line">
+                  {caseStudy.architectureDetails || caseStudy.architectureDescription}
                 </p>
               </div>
             </div>
 
             {/* Client Testimonial Banner */}
+            {caseStudy.testimonial?.quote && (
             <div className="bg-gradient-to-br from-blue-50 to-indigo-50/70 rounded-3xl p-8 lg:p-10 border border-blue-200/90 relative">
               <Quote className="w-10 h-10 text-blue-300/80 mb-4" />
               <p className="text-lg font-medium text-slate-800 italic leading-relaxed mb-6">
@@ -167,10 +162,11 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
               <div>
                 <div className="font-extrabold text-slate-900 text-sm">{caseStudy.testimonial.author}</div>
                 <div className="text-xs font-semibold text-slate-600">
-                  {caseStudy.testimonial.role}, {caseStudy.testimonial.company}
+                  {[caseStudy.testimonial.role, caseStudy.testimonial.company].filter(Boolean).join(', ')}
                 </div>
               </div>
             </div>
+          )}
           </div>
 
           {/* Sidebar */}
@@ -182,7 +178,7 @@ export const CaseStudyDetailPage: React.FC<{ slug: string }> = ({ slug }) => {
                 <span>Technologies Deployed</span>
               </h3>
               <div className="flex flex-wrap gap-2">
-                {caseStudy.technologies.map(tech => (
+                {caseStudy.technologies?.map(tech => (
                   <span
                     key={tech}
                     className="text-xs font-semibold bg-[#F8FAFC] text-slate-800 px-3 py-1.5 rounded-lg border border-slate-200"

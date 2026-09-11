@@ -22,7 +22,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email) return;
 
@@ -35,9 +35,6 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
     } catch {
       window.alert('We could not submit your demo request. Please try again.');
     }
-    setTimeout(() => {
-      // Auto close after 3 seconds if user hasn't closed it
-    }, 3000);
   };
 
   const days = ['Wednesday', 'Thursday', 'Friday', 'Next Monday'];
@@ -45,7 +42,12 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div
+        className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Book a Free AI Bee Demo"
+      >
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -60,10 +62,10 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden z-10"
+          className="relative w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden z-10 my-auto max-h-[calc(100dvh-2rem)] overflow-y-auto"
         >
           {/* Top Bar */}
-          <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 flex items-center justify-between border-b border-slate-100">
+          <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 flex items-center justify-between border-b border-slate-100 sticky top-0 bg-white z-10">
             <div>
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#0282EB] bg-blue-50 px-2.5 py-1 rounded-full">
                 Interactive Architecture Walkthrough
@@ -77,6 +79,7 @@ export const BookDemoModal: React.FC<BookDemoModalProps> = ({ isOpen, onClose })
             </div>
             <button
               onClick={onClose}
+              aria-label="Close"
               className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <X className="w-5 h-5" />

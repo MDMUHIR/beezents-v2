@@ -37,7 +37,12 @@ export const TeamPage: React.FC = () => {
 
       <section className="mx-auto max-w-[1440px] px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         {filtered.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-sm text-slate-500">Team profiles are being prepared.</div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center">
+            <p className="text-sm text-slate-500">Our full team directory is being updated.</p>
+            <Link href="/about" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#0282EB] hover:underline">
+              Meet our leadership <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map(member => (

@@ -9,7 +9,7 @@ export const StatsSection: React.FC = () => {
       glow: "from-blue-500/20 to-cyan-500/20",
     },
     {
-      value: "30+",
+      value: "50+",
       label: "Happy Clients",
       glow: "from-cyan-500/20 to-blue-500/20",
     },
@@ -28,7 +28,7 @@ export const StatsSection: React.FC = () => {
   return (
     <section
       aria-labelledby="impact-heading"
-      className="border-slate-800/80 bg-[#282829]  relative"
+      className="border-slate-800/80 bg-[#0B0F19] relative overflow-hidden"
     >
       <div className="pointer-events-none absolute -left-24 -top-32 h-80 w-80 rounded-full bg-[#0282EB]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-[#00C6D7]/15 blur-3xl" />
