@@ -1,6 +1,6 @@
 import React from "react";
 import { useModals } from "../../context/ModalContext";
-import { BeeHero } from "./sections/BeeHero";
+import { Hero } from "./sections/Hero";
 import { TrustLogos } from "./sections/TrustLogos";
 import { ServicesSection } from "./sections/ServicesSection";
 import { CaseStudiesSection } from "./sections/CaseStudiesSection";
@@ -13,8 +13,8 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="w-full bg-white selection:bg-blue-100 selection:text-[#0282EB] overflow-hidden">
-      {/* 1. Editorial Hero Section with 3D Mascot & Platform */}
-      <BeeHero onOpenDemoModal={openDemo} onOpenDayTimeline={openDayTimeline} />
+      {/* 1. Editorial Hero Section with Honeycomb Hive */}
+      <Hero onOpenDemoModal={openDemo} onOpenDayTimeline={openDayTimeline} />
 
       {/* 2. Trusted By Section */}
       <TrustLogos />

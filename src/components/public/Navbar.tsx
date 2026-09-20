@@ -13,6 +13,31 @@ import {
   Shield,
 } from "lucide-react";
 
+// Fallback lists keep every dropdown populated even when the backend is
+// unreachable or has not defined categories yet.
+const FALLBACK_SERVICES = [
+  { label: "AI Agent Development", href: "/services/ai-agent-development" },
+  { label: "AI Automation", href: "/services/ai-automation" },
+  { label: "Custom AI Solutions", href: "/services/custom-ai-solutions" },
+  { label: "Web & Software Development", href: "/services/web-software-development" },
+  { label: "AI Integration", href: "/services/ai-integration" },
+  { label: "AI Consulting", href: "/services/ai-consulting" },
+];
+
+const FALLBACK_SOLUTION_CATEGORIES = [
+  { label: "Customer Experience", href: "/solutions/category/customer-experience" },
+  { label: "Revenue Operations", href: "/solutions/category/revenue-operations" },
+  { label: "Internal Operations", href: "/solutions/category/internal-operations" },
+  { label: "Operations", href: "/solutions/category/operations" },
+  { label: "Data & Compliance", href: "/solutions/category/data-compliance" },
+];
+
+const FALLBACK_PROJECT_CATEGORIES = [
+  { label: "AI Agents", href: "/projects/category/ai-agents" },
+  { label: "AI Automation", href: "/projects/category/ai-automation" },
+  { label: "AI Solutions", href: "/projects/category/ai-solutions" },
+];
+
 function MagneticButton({
   children,
   onClick,
@@ -63,9 +88,30 @@ export const Navbar: React.FC = () => {
   const [servicesDropdown, setServicesDropdown] = useState(false);
   const [solutionsDropdown, setSolutionsDropdown] = useState(false);
   const [projectsDropdown, setProjectsDropdown] = useState(false);
-  const solutionCategories = getSolutionCategories();
+const solutionCategories = getSolutionCategories();
   const serviceCategories = getServiceCategories();
   const projectCategories = getProjectCategories();
+
+  const serviceCatItems = serviceCategories.length
+    ? serviceCategories.map(category => ({
+        label: category.name,
+        href: `/services/category/${category.slug}`,
+      }))
+    : FALLBACK_SERVICES;
+
+  const solutionCatItems = solutionCategories.length
+    ? solutionCategories.map(category => ({
+        label: category.name,
+        href: `/solutions/category/${category.slug}`,
+      }))
+    : FALLBACK_SOLUTION_CATEGORIES;
+
+  const projectCatItems = projectCategories.length
+    ? projectCategories.map(category => ({
+        label: category.name,
+        href: `/projects/category/${category.slug}`,
+      }))
+    : FALLBACK_PROJECT_CATEGORIES;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -83,34 +129,25 @@ export const Navbar: React.FC = () => {
     setProjectsDropdown(false);
   }, [path]);
 
-  const navItems = [
+const navItems = [
     { label: "Home", href: "/" },
     {
       label: "Services",
       href: "/services",
       hasDropdown: true,
-      subItems: serviceCategories.map(category => ({
-        label: category.name,
-        href: `/services/category/${category.slug}`,
-      })),
+      subItems: serviceCatItems,
     },
     {
       label: "Solutions",
       href: "/solutions",
       hasDropdown: true,
-      subItems: solutionCategories.map(category => ({
-        label: category.name,
-        href: `/solutions/category/${category.slug}`,
-      })),
+      subItems: solutionCatItems,
     },
     {
       label: "Projects",
       href: "/projects",
       hasDropdown: true,
-      subItems: projectCategories.map(category => ({
-        label: category.name,
-        href: `/projects/category/${category.slug}`,
-      })),
+      subItems: projectCatItems,
     },
     { label: "Case Studies", href: "/case-studies" },
     { label: "AI Lab", href: "/#ai-lab" },
@@ -147,13 +184,14 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header
-      className={`sticky top-0 z-50 w-full transition-all duration-200 ${
-        isScrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs py-3"
-          : "bg-white/90 backdrop-blur-xs border-b border-slate-100/60 py-4"
-      }`}
-    >
+    <>
+      <header
+        className={`fixed top-0 inset-x-0 z-50 w-full transition-all duration-200 ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs py-3"
+            : "bg-white/90 backdrop-blur-xs border-b border-slate-100/60 py-4"
+        }`}
+      >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         {/* Left: Official Brand Logo with Bee Emblem & BEEZENTS Wordmark */}
         <Link
@@ -203,20 +241,22 @@ export const Navbar: React.FC = () => {
                   {/* Dropdown Menu */}
                   {isDropdownOpen && (
                     <div className="absolute top-full -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl border border-slate-100 z-50">
-                      {item.subItems?.map((sub) => (
-                        <a
-                          key={sub.label}
-                          href={sub.href}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate(sub.href);
-                            setDropdown(false);
-                          }}
-                          className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
-                        >
-                          {sub.label}
-                        </a>
-                      ))}
+                      <div className="max-h-[70vh] overflow-y-auto overscroll-contain">
+                        {item.subItems?.map((sub) => (
+                          <a
+                            key={sub.href}
+                            href={sub.href}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(sub.href);
+                              setDropdown(false);
+                            }}
+                            className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
+                          >
+                            {sub.label}
+                          </a>
+                        ))}
+                      </div>
                       <div className="mt-1 pt-1 border-t border-slate-100 px-3.5 py-1.5">
                         <a
                           href={item.href}
@@ -362,6 +402,8 @@ export const Navbar: React.FC = () => {
         </div>
       )}
     </header>
+      <div aria-hidden="true" className="h-[72px]" />
+    </>
   );
 };
 export default Navbar;

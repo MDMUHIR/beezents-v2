@@ -2,6 +2,7 @@ import React from "react";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Link } from "../../../context/RouterContext";
 import { Container, DataGlyph, Reveal, SectionHeading } from "../SiteUI";
+import { SafeImage } from "../../shared/SafeImage";
 import { useDatabase } from "../../../context/DatabaseContext";
 
 const fallbackStudies = [
@@ -10,6 +11,7 @@ const fallbackStudies = [
     title: "E-commerce Order Automation",
     text: "Automated order processing and customer notifications, reducing manual work by 70%.",
     href: "/case-studies/autonomous-inventory-demand-intelligence",
+    image: undefined as string | undefined,
     kind: "bars" as const,
   },
   {
@@ -17,6 +19,7 @@ const fallbackStudies = [
     title: "AI Support Agent for SaaS",
     text: "Built an AI support agent that resolves customer queries instantly.",
     href: "/case-studies/omni-channel-agentic-support-infrastructure",
+    image: undefined as string | undefined,
     kind: "nodes" as const,
   },
   {
@@ -24,6 +27,7 @@ const fallbackStudies = [
     title: "Intelligent Document Search",
     text: "Implemented a RAG system for enterprise knowledge retrieval.",
     href: "/case-studies/real-time-document-compliance-pipeline",
+    image: undefined as string | undefined,
     kind: "orbit" as const,
   },
 ];
@@ -31,12 +35,13 @@ const fallbackStudies = [
 export const CaseStudiesSection: React.FC = () => {
   const { getCaseStudies } = useDatabase();
   const cmsStudies = getCaseStudies();
-  const studies = cmsStudies.length
+const studies = cmsStudies.length
     ? cmsStudies.slice(0, 3).map((study, index) => ({
         category: study.industry || 'CASE STUDY',
         title: study.title,
         text: study.summary,
         href: `/case-studies/${study.slug}`,
+        image: study.coverImage,
         kind: fallbackStudies[index % fallbackStudies.length].kind,
       }))
     : fallbackStudies;
@@ -63,7 +68,15 @@ export const CaseStudiesSection: React.FC = () => {
           <Reveal key={study.title} delay={index * 0.08}>
             <Link href={study.href} className="group block">
               <div className="border border-[#E5E7EB] bg-[#F7FAFC] p-3 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#0282EB]/45 group-hover:shadow-[0_18px_40px_rgba(2,130,235,.09)]">
-                <DataGlyph kind={study.kind} />
+                {study.image ? (
+                  <SafeImage
+                    src={study.image}
+                    alt={study.title}
+                    className="h-36 w-full rounded-[14px] object-cover"
+                  />
+                ) : (
+                  <DataGlyph kind={study.kind} />
+                )}
               </div>
               <div className="pt-6">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#0282EB]">
