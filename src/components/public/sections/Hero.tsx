@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useState, useRef } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "motion/react";
+import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { Link } from "../../../context/RouterContext";
 
 const HEADLINES = {
@@ -98,15 +105,64 @@ const SERVICES = [
 ];
 
 const TOOLS = [
-  "Slack",
   "Gmail",
-  "HubSpot",
-  "Notion",
-  "Salesforce",
+  "Google Calendar",
   "Google Sheets",
+  "Google Drive",
+  "Slack",
+  "Notion",
+  "HubSpot",
+  "Salesforce",
+  "Airtable",
+  "Facebook",
+  "WhatsApp",
   "Zapier",
+  "n8n",
 ];
+// A button that leans a few pixels toward the cursor while hovered.
+function MagneticButton({
+  children,
+  onClick,
+  className,
+  style,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 200, damping: 15, mass: 0.4 });
+  const sy = useSpring(y, { stiffness: 200, damping: 15, mass: 0.4 });
 
+  const handleMove = (e: React.MouseEvent) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    x.set((e.clientX - rect.left - rect.width / 2) * 0.25);
+    y.set((e.clientY - rect.top - rect.height / 2) * 0.25);
+  };
+  const handleLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.button
+      ref={ref}
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+      onClick={onClick}
+      style={{ x: sx, y: sy, ...style }}
+      whileTap={{ scale: 0.97 }}
+      className={className}
+    >
+      {children}
+    </motion.button>
+  );
+}
 /* ------------------------------------------------------------------ */
 /* Honeycomb geometry (pointy-top hexagons, axial coordinates)         */
 /* ------------------------------------------------------------------ */
@@ -488,23 +544,18 @@ export function Hero({
               24/7 reliability.
             </p>
             <div className="flex flex-wrap gap-3 mt-[34px]">
-              {onOpenDemoModal ? (
-                <button
-                  onClick={onOpenDemoModal}
-                  className={`${BTN_BASE} text-white bg-gradient-to-r from-[#013498] to-[#0057d6] shadow-[0_8px_24px_-10px_rgba(1,52,152,0.55)] hover:-translate-y-px hover:shadow-[0_12px_28px_-10px_rgba(1,52,152,0.65)]`}
-                >
-                  Book a Demo
-                </button>
-              ) : (
-                <Link
-                  className={`${BTN_BASE} text-white bg-gradient-to-r from-[#013498] to-[#0057d6] shadow-[0_8px_24px_-10px_rgba(1,52,152,0.55)] hover:-translate-y-px hover:shadow-[0_12px_28px_-10px_rgba(1,52,152,0.65)]`}
-                  href="/contact"
-                >
-                  Book a Demo
-                </Link>
-              )}
+              <MagneticButton
+                onClick={onOpenDemoModal}
+                className="inline-flex items-center gap-3.5 pl-6 pr-2 py-2 rounded-full bg-[#2469E5] hover:bg-[#1b58ca] text-white text-xs sm:text-sm font-bold tracking-wider uppercase shadow-lg shadow-blue-500/25 transition-colors cursor-pointer"
+                style={{ fontFamily: "'Orbitron', sans-serif" }}
+              >
+                <span>Book a Demo</span>
+                <span className="w-8 h-8 rounded-lg bg-[#1B1F27] text-white flex items-center justify-center shadow-xs">
+                  <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                </span>
+              </MagneticButton>
               <a
-                href="#case-studies"
+                href="/"
                 className={`${BTN_BASE} text-[#0a1b3d] dark:text-[#eaf1ff] border-[#e1e8f5] dark:border-[#1e3266] bg-transparent hover:border-[#005bd8] dark:hover:border-[#5aa6ff]`}
               >
                 See our work
@@ -513,9 +564,10 @@ export function Hero({
             {onOpenDayTimeline && (
               <button
                 onClick={onOpenDayTimeline}
-                className="mt-5 p-0 bg-transparent border-none text-[0.95rem] font-medium text-[#5b6987] dark:text-[#98a8cb] hover:text-[#005bd8] dark:hover:text-[#5aa6ff] cursor-pointer"
+                className=" hidden sm:inline-flex items-center gap-1 mt-5 p-0 bg-transparent border-none text-[0.95rem] font-medium text-[#5b6987] dark:text-[#98a8cb] hover:text-[#005bd8] dark:hover:text-[#5aa6ff] cursor-pointer"
               >
-                Interactive Day Simulator
+                <span>Interactive Day Simulator</span>
+                <ChevronDown className=" -rotate-90" />
               </button>
             )}
           </div>
@@ -523,18 +575,30 @@ export function Hero({
           <Hive logoSrc={logoSrc} />
         </div>
 
-        <div className="flex flex-wrap items-baseline gap-x-7 gap-y-2.5 mt-[clamp(40px,5vw,64px)] pt-[26px] border-t border-[#e1e8f5] dark:border-[#1e3266] text-[0.98rem] text-[#5b6987] dark:text-[#98a8cb]">
-          <strong className="font-semibold text-[#0a1b3d] dark:text-[#eaf1ff]">
+        <div className="hidden sm:flex items-center gap-6 mt-[clamp(40px,5vw,64px)] pt-[26px] border-t border-[#e1e8f5] dark:border-[#1e3266] text-[0.98rem] text-[#5b6987] dark:text-[#98a8cb] overflow-hidden">
+          <strong className="shrink-0 font-semibold text-[#0a1b3d] dark:text-[#eaf1ff]">
             Works with the tools you already use:
           </strong>
-          {TOOLS.map((t) => (
-            <span
-              key={t}
-              className="font-chakra font-medium tracking-wider text-[#3a4a6b] dark:text-[#c3cfea] before:content-['['] before:text-[#005bd8]/60 before:mr-1.5 after:content-[']'] after:text-[#005bd8]/60 after:ml-1.5"
-            >
-              {t}
-            </span>
-          ))}
+          <div
+            className="relative flex-1 min-w-0 overflow-hidden"
+            style={{
+              maskImage:
+                "linear-gradient(90deg, transparent, black 24px, black calc(100% - 24px), transparent)",
+              WebkitMaskImage:
+                "linear-gradient(90deg, transparent, black 24px, black calc(100% - 24px), transparent)",
+            }}
+          >
+            <div className="flex items-center gap-7 w-max whitespace-nowrap animate-[marquee_28s_linear_infinite] motion-reduce:animate-none hover:[animation-play-state:paused]">
+              {[...TOOLS, ...TOOLS].map((t, i) => (
+                <span
+                  key={`${t}-${i}`}
+                  className="font-chakra font-medium tracking-wider text-[#3a4a6b] dark:text-[#c3cfea] before:content-['['] before:text-[#005bd8]/60 before:mr-1.5 after:content-[']'] after:text-[#005bd8]/60 after:ml-1.5"
+                >
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
