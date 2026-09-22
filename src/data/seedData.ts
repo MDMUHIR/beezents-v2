@@ -38,6 +38,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'AI Agent Development Services | The Beezent',
       seoDescription: 'Enterprise AI Agent development by The Beezent. We engineer autonomous agents that execute multi-step business workflows with tool calling and safety guardrails.',
       status: 'PUBLISHED',
+      featured: true,
       sortOrder: 1,
       createdAt: '2025-01-10T10:00:00Z',
       updatedAt: '2025-02-15T14:30:00Z'
@@ -76,6 +77,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'Enterprise AI Automation Solutions | The Beezent',
       seoDescription: 'Intelligent AI automation services for enterprise operations. Streamline document ingestion, cross-system syncing, and automated data reconciliation.',
       status: 'PUBLISHED',
+      featured: true,
       sortOrder: 2,
       createdAt: '2025-01-12T10:00:00Z',
       updatedAt: '2025-02-14T12:00:00Z'
@@ -114,6 +116,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'Custom AI Solutions & Machine Learning Engineering | The Beezent',
       seoDescription: 'Bespoke AI system architecture, enterprise RAG, model fine-tuning, and private VPC deployment engineered by The Beezent.',
       status: 'PUBLISHED',
+      featured: false,
       sortOrder: 3,
       createdAt: '2025-01-15T11:00:00Z',
       updatedAt: '2025-02-18T09:00:00Z'
@@ -152,6 +155,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'Full-Stack Web & Software Engineering | The Beezent',
       seoDescription: 'High-performance web and software development by The Beezent. We build AI-native applications, scalable cloud backends, and robust enterprise platforms.',
       status: 'PUBLISHED',
+      featured: false,
       sortOrder: 4,
       createdAt: '2025-01-18T14:00:00Z',
       updatedAt: '2025-02-20T16:00:00Z'
@@ -190,6 +194,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'Enterprise AI Integration Services | The Beezent',
       seoDescription: 'Connect advanced AI models and automation directly into your existing CRM, ERP, and databases with The Beezent integration engineering.',
       status: 'PUBLISHED',
+      featured: false,
       sortOrder: 5,
       createdAt: '2025-01-20T09:00:00Z',
       updatedAt: '2025-02-22T11:00:00Z'
@@ -228,6 +233,7 @@ export const initialDatabase: AppDatabase = {
       seoTitle: 'Strategic AI Consulting & Advisory | The Beezent',
       seoDescription: 'Pragmatic AI consulting for ambitious businesses. Validate technical feasibility, plan enterprise AI architectures, and accelerate ROI with The Beezent.',
       status: 'PUBLISHED',
+      featured: false,
       sortOrder: 6,
       createdAt: '2025-01-22T13:00:00Z',
       updatedAt: '2025-02-24T15:00:00Z'

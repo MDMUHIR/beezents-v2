@@ -33,11 +33,12 @@ export interface Service {
   categoryId?: string;
   categoryIds?: string[];
   categories?: ServiceCategory[];
+  featured: boolean;
   heroVisual?: string;
-  features: string[];
-  benefits: string[];
-  technologies: string[];
-  process: { step: number; title: string; description: string }[];
+  features?: string[];
+  benefits?: string[];
+  technologies?: string[];
+  process?: { step: number; title: string; description: string }[];
   problemStatement?: string;
   ourApproach?: string;
   ctaText?: string;

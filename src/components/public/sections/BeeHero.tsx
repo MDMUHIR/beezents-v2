@@ -136,7 +136,7 @@ export const BeeHero: React.FC<BeeHeroProps> = ({
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
-      navigate("/solutions");
+      navigate("/services");
     }
   };
 

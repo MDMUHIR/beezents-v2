@@ -61,7 +61,7 @@ export const AdminDashboard: React.FC = () => {
     {
       title: 'Core Services',
       value: services.length,
-      sub: 'Architectural offerings',
+      sub: `${services.filter(s => s.featured).length} featured`,
       icon: <Cpu className="w-5 h-5" />,
       href: '/admin/services',
     },

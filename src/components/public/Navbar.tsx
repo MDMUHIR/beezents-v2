@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, useMotionValue, useSpring } from "motion/react";
+import { motion, useMotionValue, useSpring, AnimatePresence } from "motion/react";
 import { useRouter, Link } from "../../context/RouterContext";
 import { useDatabase } from "../../context/DatabaseContext";
 import { useModals } from "../../context/ModalContext";
@@ -85,9 +85,8 @@ export const Navbar: React.FC = () => {
   const { openDemo } = useModals();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [servicesDropdown, setServicesDropdown] = useState(false);
-  const [solutionsDropdown, setSolutionsDropdown] = useState(false);
-  const [projectsDropdown, setProjectsDropdown] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const headerRef = React.useRef<HTMLElement>(null);
 const solutionCategories = getSolutionCategories();
   const serviceCategories = getServiceCategories();
   const projectCategories = getProjectCategories();
@@ -124,13 +123,30 @@ const solutionCategories = getSolutionCategories();
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
-    setServicesDropdown(false);
-    setSolutionsDropdown(false);
-    setProjectsDropdown(false);
+    setOpenDropdown(null);
   }, [path]);
 
+  // Close dropdowns when clicking outside the navbar or pressing Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
 const navItems = [
-    { label: "Home", href: "/" },
     {
       label: "Services",
       href: "/services",
@@ -156,21 +172,28 @@ const navItems = [
 
   const handleNavClick = (e: React.MouseEvent, href: string) => {
     e.preventDefault();
+    setOpenDropdown(null);
     if (href.startsWith("/#")) {
       const targetId = href.replace("/#", "");
-      if (path !== "/") {
-        navigate("/");
-        setTimeout(() => {
-          const el = document.getElementById(targetId);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-        }, 100);
-      } else {
+      const scrollToTarget = () => {
         const el = document.getElementById(targetId);
         if (el) {
           el.scrollIntoView({ behavior: "smooth", block: "start" });
+          return true;
         }
+        return false;
+      };
+      if (path !== "/") {
+        navigate("/");
+        let attempts = 0;
+        const poll = () => {
+          if (scrollToTarget() || attempts >= 40) return;
+          attempts += 1;
+          setTimeout(poll, 50);
+        };
+        setTimeout(poll, 50);
+      } else {
+        scrollToTarget();
       }
     } else {
       navigate(href);
@@ -186,13 +209,14 @@ const navItems = [
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 w-full transition-all duration-200 ${
+        ref={headerRef}
+        className={`fixed top-0 inset-x-0 z-50 w-full transition-all duration-300 ${
           isScrolled
-            ? "bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs py-3"
-            : "bg-white/90 backdrop-blur-xs border-b border-slate-100/60 py-4"
+            ? "h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-[0_4px_20px_-8px_rgba(2,130,235,0.16)]"
+            : "h-16 bg-white/85 backdrop-blur-sm border-b border-transparent"
         }`}
       >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
         {/* Left: Official Brand Logo with Bee Emblem & BEEZENTS Wordmark */}
         <Link
           href="/"
@@ -204,33 +228,29 @@ const navItems = [
 
         {/* Center: Desktop Navigation Links matching reference screenshot */}
         <nav
-          className="hidden lg:flex items-center gap-7 text-sm font-medium"
+          className="hidden lg:flex items-center gap-8 text-sm font-medium h-full"
           aria-label="Main Navigation"
         >
           {navItems.map((item) => {
             const active = isActive(item.href);
 
             if (item.hasDropdown) {
-                const isDropdownOpen =
-                item.label === "Services" ? servicesDropdown : item.label === "Solutions" ? solutionsDropdown : projectsDropdown;
-                const setDropdown =
-                item.label === "Services" ? setServicesDropdown : item.label === "Solutions" ? setSolutionsDropdown : setProjectsDropdown;
+                const isDropdownOpen = openDropdown === item.label;
 
               return (
                 <div
                   key={item.label}
-                  className="relative group py-2"
-                  onMouseEnter={() => setDropdown(true)}
-                  onMouseLeave={() => setDropdown(false)}
-                  onFocus={() => setDropdown(true)}
-                  onBlur={() => setDropdown(false)}
+                  className="relative group h-full flex items-center"
                 >
                   <a
                     href={item.href}
-                    onClick={(e) => handleNavClick(e, item.href)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenDropdown(isDropdownOpen ? null : item.label);
+                    }}
                     aria-haspopup="true"
                     aria-expanded={isDropdownOpen}
-                    className={`inline-flex items-center gap-1 transition-colors hover:text-[#0282EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
+                    className={`inline-flex items-center gap-1.5 py-1 cursor-pointer transition-colors hover:text-[#0282EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm whitespace-nowrap ${
                       active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
                     }`}
                   >
@@ -239,8 +259,15 @@ const navItems = [
                   </a>
 
                   {/* Dropdown Menu */}
+                  <AnimatePresence>
                   {isDropdownOpen && (
-                    <div className="absolute top-full -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl border border-slate-100 z-50">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      className="absolute top-full mt-2 -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl shadow-blue-900/5 border border-slate-100 z-50"
+                    >
                       <div className="max-h-[70vh] overflow-y-auto overscroll-contain">
                         {item.subItems?.map((sub) => (
                           <a
@@ -249,7 +276,7 @@ const navItems = [
                             onClick={(e) => {
                               e.preventDefault();
                               navigate(sub.href);
-                              setDropdown(false);
+                              setOpenDropdown(null);
                             }}
                             className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
                           >
@@ -267,25 +294,28 @@ const navItems = [
                           <ArrowRight className="w-3 h-3" />
                         </a>
                       </div>
-                    </div>
+                    </motion.div>
                   )}
+                  </AnimatePresence>
                 </div>
               );
             }
 
             return (
-              <div key={item.label} className="relative py-2">
+              <div key={item.label} className="relative group/link h-full flex items-center">
                 <a
                   href={item.href}
                   onClick={(e) => handleNavClick(e, item.href)}
-                  className={`transition-colors hover:text-[#0282EB] relative py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
+                  className={`transition-colors hover:text-[#0282EB] relative py-1 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
                     active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
                   }`}
                 >
                   {item.label}
-                  {active && (
-                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0282EB] rounded-full" />
-                  )}
+                  <span
+                    className={`absolute left-0 -bottom-0.5 h-0.5 bg-[#0282EB] rounded-full transition-all duration-300 ${
+                      active ? "w-full" : "w-0 group-hover/link:w-full"
+                    }`}
+                  />
                 </a>
               </div>
             );
@@ -304,10 +334,10 @@ const navItems = [
         </div>
 
         {/* Mobile Hamburger Button */}
-        <div className="flex lg:hidden items-center gap-2">
+        <div className="flex lg:hidden items-center gap-2 h-full">
           <button
             onClick={openDemo}
-            className="text-xs font-semibold bg-[#0282EB] text-white px-3.5 py-1.5 rounded-lg flex items-center gap-1"
+            className="text-xs font-semibold bg-[#0282EB] text-white px-3.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#0171d0] transition-colors"
           >
             <span>Talk</span>
             <ArrowRight className="w-3 h-3" />
@@ -327,8 +357,16 @@ const navItems = [
       </div>
 
       {/* Mobile Navigation Drawer */}
+      <AnimatePresence>
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-slate-200 bg-white px-5 pt-3 pb-6 space-y-3 shadow-xl">
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="lg:hidden overflow-hidden border-b border-slate-200 bg-white shadow-xl"
+        >
+          <div className="px-5 pt-3 pb-6 space-y-3">
           <div className="space-y-1">
             {navItems.map((item) => (
               <div key={item.label}>
@@ -337,9 +375,7 @@ const navItems = [
                   onClick={(e) => {
                     if (item.hasDropdown) {
                       e.preventDefault();
-                      if (item.label === "Solutions") setSolutionsDropdown(open => !open);
-                      else if (item.label === "Projects") setProjectsDropdown(open => !open);
-                      else setServicesDropdown(open => !open);
+                      setOpenDropdown(openDropdown === item.label ? null : item.label);
                     } else {
                       handleNavClick(e, item.href);
                       setMobileMenuOpen(false);
@@ -354,7 +390,7 @@ const navItems = [
                   <span>{item.label}</span>
                   {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
                 </a>
-{item.hasDropdown && ((item.label === "Solutions" ? solutionsDropdown : item.label === "Projects" ? projectsDropdown : servicesDropdown)) && (
+{item.hasDropdown && openDropdown === item.label && (
                   <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
                     <a
                       href={item.href}
@@ -400,9 +436,11 @@ const navItems = [
             </button>
           </div>
         </div>
+      </motion.div>
       )}
+      </AnimatePresence>
     </header>
-      <div aria-hidden="true" className="h-[72px]" />
+      <div aria-hidden="true" className="h-16" />
     </>
   );
 };

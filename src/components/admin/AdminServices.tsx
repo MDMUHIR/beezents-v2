@@ -13,7 +13,8 @@ import {
   Sparkles,
   Code2,
   Layers,
-  Compass
+  Compass,
+  Star
 } from 'lucide-react';
 
 const icons = ['Bot', 'Cpu', 'Sparkles', 'Code2', 'Layers', 'Compass'];
@@ -33,14 +34,12 @@ export const AdminServices: React.FC = () => {
   const initialForm = {
     title: '',
     slug: '',
-    categoryIds: remoteCategoryIds(serviceCategories.slice(0, 1).map(category => category.id)),
+    categoryIds: [] as string[],
     shortDescription: '',
     fullDescription: '',
     icon: 'Bot',
-    features: 'High-throughput execution\nDeterministic guardrails\nState persistence',
-    benefits: 'Eliminates repetitive manual workflows\nGuaranteed uptime SLA',
-    technologies: 'Python, FastAPI, LangGraph, Redis, PostgreSQL',
-    ctaText: 'Schedule Engineering Discovery',
+    featured: false,
+    sortOrder: 0,
     status: 'PUBLISHED' as 'PUBLISHED' | 'DRAFT',
   };
 
@@ -86,10 +85,8 @@ export const AdminServices: React.FC = () => {
       shortDescription: s.shortDescription,
       fullDescription: s.fullDescription,
       icon: s.icon,
-      features: s.features.join('\n'),
-      benefits: s.benefits.join('\n'),
-      technologies: s.technologies.join(', '),
-      ctaText: s.ctaText || 'Schedule Engineering Discovery',
+      featured: s.featured,
+      sortOrder: s.sortOrder,
       status: s.status,
     });
     setModalOpen(true);
@@ -98,17 +95,7 @@ export const AdminServices: React.FC = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const techArray = formData.technologies.split(',').map(t => t.trim()).filter(Boolean);
-    const featureArray = formData.features.split('\n').map(f => f.trim()).filter(Boolean);
-    const benefitsArray = formData.benefits.split('\n').map(b => b.trim()).filter(Boolean);
     const generatedSlug = formData.slug.trim() || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-
-    const defaultProcess = [
-      { step: 1, title: 'Workflow Decomposition', description: 'Deconstruct target operational bottlenecks into atomic tasks and deterministic schemas.' },
-      { step: 2, title: 'State & Guardrail Engineering', description: 'Construct persistent checkpoint mechanisms and typed validation boundaries.' },
-      { step: 3, title: 'Golden Dataset Benchmarking', description: 'Subject pipeline to comprehensive edge cases and adversarial inputs.' },
-      { step: 4, title: 'VPC Deployment & Telemetry', description: 'Deploy within your secure perimeter with distributed OpenTelemetry tracing.' },
-    ];
 
     if (editingId) {
       updateService(editingId, {
@@ -118,10 +105,8 @@ export const AdminServices: React.FC = () => {
         shortDescription: formData.shortDescription,
         fullDescription: formData.fullDescription,
         icon: formData.icon,
-        features: featureArray,
-        benefits: benefitsArray,
-        technologies: techArray,
-        ctaText: formData.ctaText,
+        featured: formData.featured,
+        sortOrder: formData.sortOrder,
         status: formData.status,
       });
     } else {
@@ -132,12 +117,8 @@ export const AdminServices: React.FC = () => {
         shortDescription: formData.shortDescription,
         fullDescription: formData.fullDescription,
         icon: formData.icon,
-        features: featureArray,
-        benefits: benefitsArray,
-        technologies: techArray,
-        process: defaultProcess,
-        ctaText: formData.ctaText,
-        sortOrder: services.length + 1,
+        featured: formData.featured,
+        sortOrder: formData.sortOrder || services.length + 1,
         status: formData.status,
       });
     }
@@ -205,8 +186,8 @@ export const AdminServices: React.FC = () => {
               <tr>
                 <th className="py-3.5 px-4">Order</th>
                 <th className="py-3.5 px-4">Service</th>
-                <th className="py-3.5 px-4">Key Features</th>
-                <th className="py-3.5 px-4">Tech Stack</th>
+                <th className="py-3.5 px-4">Categories</th>
+                <th className="py-3.5 px-4">Featured</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
@@ -240,18 +221,27 @@ export const AdminServices: React.FC = () => {
                     <div className="text-[11px] text-slate-500 max-w-xs truncate">{s.shortDescription}</div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="text-slate-700 max-w-xs truncate">
-                      {s.features.join(', ')}
+                    <div className="flex flex-wrap gap-1 max-w-xs">
+                      {(s.categories?.length ? s.categories : serviceCategories.filter(category => category.slug === s.categorySlug || category.id === s.categoryId)).slice(0, 3).map(category => (
+                        <span key={category.id} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                          {category.name}
+                        </span>
+                      ))}
+                      {!s.categories?.length && s.category && (
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                          {s.category}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
-                    <div className="flex flex-wrap gap-1 max-w-xs">
-                      {s.technologies.slice(0, 3).map(tech => (
-                        <span key={tech} className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-sm">
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => updateService(s.id, { featured: !s.featured })}
+                      className={`p-1.5 rounded-lg transition-colors ${s.featured ? 'text-amber-400 hover:text-amber-500' : 'text-slate-300 hover:text-slate-500'}`}
+                      title={s.featured ? 'Unmark as featured' : 'Mark as featured'}
+                    >
+                      <Star className={`w-4 h-4 ${s.featured ? 'fill-current' : ''}`} />
+                    </button>
                   </td>
                   <td className="py-3.5 px-4">
                     <span
@@ -317,6 +307,21 @@ export const AdminServices: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.slug}
+                    placeholder="auto-generated from name"
+                    onChange={e => setFormData({ ...formData, slug: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     Icon Identifier
                   </label>
                   <select
@@ -377,24 +382,28 @@ export const AdminServices: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Features & Deliverables (one per line)
+                    Featured
                   </label>
-                  <textarea
-                    rows={3}
-                    value={formData.features}
-                    onChange={e => setFormData({ ...formData, features: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
-                  />
+                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.featured}
+                      onChange={e => setFormData({ ...formData, featured: e.target.checked })}
+                      className="h-4 w-4 rounded text-[#0282EB]"
+                    />
+                    <span>Show as a featured service</span>
+                  </label>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Business Benefits (one per line)
+                    Sort Order
                   </label>
-                  <textarea
-                    rows={3}
-                    value={formData.benefits}
-                    onChange={e => setFormData({ ...formData, benefits: e.target.value })}
+                  <input
+                    type="number"
+                    min={0}
+                    value={formData.sortOrder}
+                    onChange={e => setFormData({ ...formData, sortOrder: Number(e.target.value) })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
                   />
                 </div>
@@ -402,42 +411,16 @@ export const AdminServices: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Technologies (comma separated)
+                  Publication Status
                 </label>
-                <input
-                  type="text"
-                  value={formData.technologies}
-                  onChange={e => setFormData({ ...formData, technologies: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    CTA Button Label
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ctaText}
-                    onChange={e => setFormData({ ...formData, ctaText: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-[#0282EB] outline-hidden"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Publication Status
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:border-[#0282EB] outline-hidden"
-                  >
-                    <option value="PUBLISHED">Published</option>
-                    <option value="DRAFT">Draft</option>
-                  </select>
-                </div>
+                <select
+                  value={formData.status}
+                  onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs bg-white focus:border-[#0282EB] outline-hidden"
+                >
+                  <option value="PUBLISHED">Published</option>
+                  <option value="DRAFT">Draft</option>
+                </select>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

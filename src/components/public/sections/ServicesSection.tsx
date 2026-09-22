@@ -73,8 +73,11 @@ export const ServicesSection: React.FC = () => {
     },
   ];
   const cmsServices = getServices();
-  const services = cmsServices.length
-    ? cmsServices.slice(0, 4).map((service, index) => ({
+  const orderedServices = [...cmsServices].sort(
+    (a, b) => Number(b.featured) - Number(a.featured) || a.sortOrder - b.sortOrder
+  );
+  const services = orderedServices.length
+    ? orderedServices.slice(0, 4).map((service, index) => ({
         id: service.id,
         title: service.title.toUpperCase(),
         description: service.shortDescription,

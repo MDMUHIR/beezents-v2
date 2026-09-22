@@ -78,8 +78,8 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* Column 2: Services (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* Column 2: Services (lg:col-span-4) */}
+          <div className="lg:col-span-4 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
               SERVICES
             </h4>
@@ -107,36 +107,7 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Column 3: Solutions (lg:col-span-2) */}
-          <div className="lg:col-span-2 space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
-              SOLUTIONS
-            </h4>
-            <ul className="space-y-2.5 text-sm">
-              <li>
-                <Link href="/solutions/ai-customer-support" className="hover:text-[#0282EB] transition-colors">
-                  Customer Support
-                </Link>
-              </li>
-              <li>
-                <Link href="/solutions/ai-sales-agent" className="hover:text-[#0282EB] transition-colors">
-                  Sales Agent
-                </Link>
-              </li>
-              <li>
-                <Link href="/solutions/ai-workflow-automation" className="hover:text-[#0282EB] transition-colors">
-                  Workflow Automation
-                </Link>
-              </li>
-              <li>
-                <Link href="/solutions/ai-lead-qualification" className="hover:text-[#0282EB] transition-colors">
-                  Lead Qualification
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 4: Company (lg:col-span-3) */}
+          {/* Column 3: Company (lg:col-span-3) */}
           <div className="lg:col-span-3 space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-white font-orbitron">
               COMPANY

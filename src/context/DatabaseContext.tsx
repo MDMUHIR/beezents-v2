@@ -289,7 +289,7 @@ const normalizeService = (raw: unknown): Service => {
     icon: String(value(item, 'icon') || 'Bot'), heroVisual: value(item, 'hero_visual', 'heroVisual'), features: list(item, 'features'), benefits: list(item, 'benefits'),
     technologies: list(item, 'technologies'), process: list(item, 'process').map((step, index) => ({ step: Number(step.step || index + 1), title: String(step.title || ''), description: String(step.description || '') })),
     problemStatement: value(item, 'problem_statement', 'problemStatement'), ourApproach: value(item, 'our_approach', 'ourApproach'), ctaText: value(item, 'cta_text', 'ctaText'),
-    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), status: contentStatus(item),
+    seoTitle: value(item, 'seo_title', 'seoTitle'), seoDescription: value(item, 'seo_description', 'seoDescription'), status: contentStatus(item), featured: Boolean(value(item, 'featured') || false),
     sortOrder: Number(value(item, 'sort_order', 'sortOrder') || 0), createdAt: iso(item, 'created_at', 'createdAt'), updatedAt: iso(item, 'updated_at', 'updatedAt'),
   };
 };
@@ -358,8 +358,8 @@ const projectPayload = (data: Partial<Project>, isCreate = false) => ({
   challenge: data.challenge, solution: data.solution, implementation: data.implementation, related_service_ids: data.relatedServiceIds, related_case_study_id: data.relatedCaseStudyId,
 });
 const servicePayload = (data: Partial<Service>) => ({
-  name: data.title, slug: data.slug, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : data.category ? { category: data.category } : {}), short_description: data.shortDescription, description: data.fullDescription, icon: data.icon, features: data.features, benefits: data.benefits,
-  technologies: data.technologies, process: data.process, cta_text: data.ctaText, ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), sort_order: data.sortOrder, problem_statement: data.problemStatement, our_approach: data.ourApproach, seo_title: data.seoTitle, seo_description: data.seoDescription,
+  name: data.title, slug: data.slug, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : data.category ? { category: data.category } : {}), short_description: data.shortDescription, description: data.fullDescription, icon: data.icon,
+  ...(data.featured !== undefined ? { featured: data.featured } : {}), ...(data.status !== undefined ? { published: data.status === 'PUBLISHED' } : {}), sort_order: data.sortOrder,
 });
 const solutionPayload = (data: Partial<Solution>) => ({
   name: data.title, slug: data.slug, ...(data.categoryIds !== undefined ? { category_ids: data.categoryIds.filter(categoryId => !categoryId.startsWith('local-')) } : data.categoryId && !data.categoryId.startsWith('local-') ? { category_ids: [data.categoryId] } : { category: data.category }), short_description: data.shortDescription, description: data.description || data.fullDescription, business_problem: data.businessProblem || data.problemSolved, solution: data.solution || data.howItWorks,

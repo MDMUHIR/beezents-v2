@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from '../../context/RouterContext';
 import { useDatabase } from '../../context/DatabaseContext';
-import { Bot, Cpu, Sparkles, Code2, Layers, Compass, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { Bot, Cpu, Sparkles, Code2, Layers, Compass, ArrowRight, CheckCircle2, Zap, Star } from 'lucide-react';
 
 const iconMap: Record<string, React.ReactNode> = {
   Bot: <Bot className="w-7 h-7" />,
@@ -25,7 +25,11 @@ export const ServicesPage: React.FC<{ categorySlug?: string }> = ({ categorySlug
 
   const filteredServices = selectedCategory === 'ALL'
     ? services
-    : services.filter(service => (service.categorySlug || service.category?.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) === selectedCategory);
+    : services.filter(service => {
+        const categorySlugs = service.categories?.map(category => category.slug) || [];
+        return categorySlugs.includes(selectedCategory)
+          || (service.categorySlug || service.category?.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) === selectedCategory;
+      });
 
   return (
     <div className="w-full bg-[#F8FAFC]">
@@ -85,9 +89,17 @@ export const ServicesPage: React.FC<{ categorySlug?: string }> = ({ categorySlug
                   <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0282EB] flex items-center justify-center group-hover:bg-[#0282EB] group-hover:text-white transition-colors duration-200">
                     {iconMap[service.icon] || <Bot className="w-7 h-7" />}
                   </div>
-                  <span className="text-xs font-bold text-slate-400">
-                    {String(service.sortOrder ?? 0).padStart(2, '0')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {service.featured && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                        <Star className="w-3 h-3 fill-current" />
+                        Featured
+                      </span>
+                    )}
+                    <span className="text-xs font-bold text-slate-400">
+                      {String(service.sortOrder ?? 0).padStart(2, '0')}
+                    </span>
+                  </div>
                 </div>
 
                 <h2 className="text-2xl font-bold text-slate-900 mb-3 tracking-tight group-hover:text-[#0282EB] transition-colors line-clamp-2">

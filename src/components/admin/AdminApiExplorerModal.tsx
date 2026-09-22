@@ -299,20 +299,15 @@ description: 'Authenticate with email and password; the server sets an HTTP-only
     name: 'Create Service',
     description: 'Create new agency service offering',
     defaultPayload: {
-      title: 'Autonomous Multi-Agent Architecture',
+      name: 'Autonomous Multi-Agent Architecture',
       slug: 'autonomous-multi-agent-architecture',
-      shortDescription: 'Self-healing, goal-driven agents with deterministic validation.',
-      fullDescription: 'Comprehensive systems engineering for enterprise orchestration DAGs.',
+      short_description: 'Self-healing, goal-driven agents with deterministic validation.',
+      description: 'Comprehensive systems engineering for enterprise orchestration DAGs.',
       icon: 'Cpu',
-      features: ['Hierarchical State Machine', 'Semantic Memory Buffers', 'Deterministic Tool Handlers'],
-      benefits: ['Zero-prompt hallucination drift', 'Linear operational scale'],
-      technologies: ['LangGraph', 'Python', 'FastAPI', 'PostgreSQL'],
-      process: [
-        { step: 1, title: 'Workflow Decomposition', description: 'Analyze business processes.' },
-        { step: 2, title: 'Agent Graph Synthesis', description: 'Design deterministic DAG topology.' }
-      ],
-      status: 'PUBLISHED',
-      sortOrder: 1,
+      featured: true,
+      published: true,
+      sort_order: 1,
+      category_ids: ['3fa85f64-5717-4562-b3fc-2c963f66afa6'],
     },
   },
   {
@@ -332,7 +327,7 @@ description: 'Authenticate with email and password; the server sets an HTTP-only
     name: 'Update Service',
     description: 'Update service parameters',
     defaultParams: { service_id: 'srv-1' },
-    defaultPayload: { sortOrder: 1 },
+    defaultPayload: { featured: true, published: true, sort_order: 1 },
   },
   {
     id: 'admin-services-delete',

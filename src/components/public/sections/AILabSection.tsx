@@ -85,7 +85,7 @@ await dynamicGraph.execute(incomingLead);`,
   const current = architectures.find(a => a.id === activeTab) || architectures[0];
 
   return (
-    <section id="ai-lab" className="py-16 sm:py-20 lg:py-24 bg-white border-b border-slate-100">
+    <section id="ai-lab" className="scroll-mt-16 py-16 sm:py-20 lg:py-24 bg-white border-b border-slate-100">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}

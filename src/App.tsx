@@ -15,8 +15,6 @@ import { HowItWorksPage } from './components/public/HowItWorksPage';
 import { PricingPage } from './components/public/PricingPage';
 import { ServicesPage } from './components/public/ServicesPage';
 import { ServiceDetailPage } from './components/public/ServiceDetailPage';
-import { SolutionsPage } from './components/public/SolutionsPage';
-import { SolutionDetailPage } from './components/public/SolutionDetailPage';
 import { ProjectsPage } from './components/public/ProjectsPage';
 import { ProjectDetailPage } from './components/public/ProjectDetailPage';
 import { CaseStudiesPage } from './components/public/CaseStudiesPage';
@@ -168,18 +166,7 @@ const AppContent: React.FC = () => {
       return <ServiceDetailPage slug={slug} />;
     }
 
-    // Solutions
-    if (path === '/solutions' || path === '/solutions/') {
-      return <SolutionsPage />;
-    }
-    if (path.startsWith('/solutions/category/')) {
-      const categorySlug = path.replace('/solutions/category/', '').split('/')[0];
-      return <SolutionsPage categorySlug={categorySlug} />;
-    }
-    if (path.startsWith('/solutions/')) {
-      const slug = path.replace('/solutions/', '').split('/')[0];
-      return <SolutionDetailPage slug={slug} />;
-    }
+// Solutions are temporarily hidden from the public site (admin CMS remains).
 
     // Projects
     if (path === '/projects' || path === '/projects/') {
