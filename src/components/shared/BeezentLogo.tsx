@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from "react";
+import { motion } from "motion/react";
 
 interface BeezentLogoProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'giant';
-  variant?: 'full' | 'mark' | 'white';
+  size?: "sm" | "md" | "lg" | "xl" | "giant";
+  variant?: "full" | "mark" | "white";
   showTagline?: boolean;
   animateOnHover?: boolean;
   isParentHovered?: boolean;
 }
 
 export const BeezentLogo: React.FC<BeezentLogoProps> = ({
-  className = '',
-  size = 'md',
-  variant = 'full',
+  className = "",
+  size = "md",
+  variant = "full",
   showTagline = false,
   animateOnHover = true,
   isParentHovered = false,
@@ -22,15 +22,15 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
   const activeHover = animateOnHover && (isSelfHovered || isParentHovered);
 
   const sizeMap = {
-    sm: { mark: 26, text: 'text-base', tracking: 'tracking-wide' },
-    md: { mark: 32, text: 'text-lg', tracking: 'tracking-wider' },
-    lg: { mark: 42, text: 'text-xl', tracking: 'tracking-wider' },
-    xl: { mark: 56, text: 'text-2xl', tracking: 'tracking-widest' },
-    giant: { mark: 96, text: 'text-4xl', tracking: 'tracking-widest' },
+    sm: { mark: 26, text: "text-base", tracking: "tracking-wide" },
+    md: { mark: 32, text: "text-lg", tracking: "tracking-wider" },
+    lg: { mark: 42, text: "text-xl", tracking: "tracking-wider" },
+    xl: { mark: 56, text: "text-2xl", tracking: "tracking-widest" },
+    giant: { mark: 96, text: "text-4xl", tracking: "tracking-widest" },
   };
 
   const currentSize = sizeMap[size];
-  const isWhite = variant === 'white';
+  const isWhite = variant === "white";
 
   // The official Beezent Bee Emblem SVG matching the user's BEEZENT LOGO asset
   const MarkSVG = (
@@ -56,11 +56,11 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
             ? {
                 duration: 2.2,
                 repeat: Infinity,
-                repeatType: 'loop',
-                ease: 'easeInOut',
+                repeatType: "loop",
+                ease: "easeInOut",
               }
             : {
-                type: 'spring',
+                type: "spring",
                 stiffness: 400,
                 damping: 24,
               }
@@ -78,20 +78,44 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
           aria-label="Beezent Bee Logo"
         >
           <defs>
-            <linearGradient id={`bzG_${size}_${variant}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient
+              id={`bzG_${size}_${variant}`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#0052CC" />
               <stop offset="50%" stopColor="#0080FF" />
               <stop offset="100%" stopColor="#00D2FF" />
             </linearGradient>
-            <linearGradient id={`bzWL_${size}_${variant}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient
+              id={`bzWL_${size}_${variant}`}
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#0055FF" />
               <stop offset="100%" stopColor="#00D2FF" />
             </linearGradient>
-            <linearGradient id={`bzWR_${size}_${variant}`} x1="100%" y1="0%" x2="0%" y2="100%">
+            <linearGradient
+              id={`bzWR_${size}_${variant}`}
+              x1="100%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#0055FF" />
               <stop offset="100%" stopColor="#00D2FF" />
             </linearGradient>
-            <linearGradient id={`bzB_${size}_${variant}`} x1="50%" y1="0%" x2="50%" y2="100%">
+            <linearGradient
+              id={`bzB_${size}_${variant}`}
+              x1="50%"
+              y1="0%"
+              x2="50%"
+              y2="100%"
+            >
               <stop offset="0%" stopColor="#0052CC" />
               <stop offset="30%" stopColor="#0066FF" />
               <stop offset="70%" stopColor="#0099FF" />
@@ -102,28 +126,49 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
           {/* Top Left Antenna (Interactive wiggle on hover) */}
           <motion.g
             animate={activeHover ? { rotate: [0, -4, 3, 0] } : { rotate: 0 }}
-            transition={activeHover ? { duration: 0.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
-            style={{ transformOrigin: '228px 148px' }}
+            transition={
+              activeHover
+                ? { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0.2 }
+            }
+            style={{ transformOrigin: "228px 148px" }}
           >
             <line
               x1="228"
               y1="148"
               x2="175"
               y2="100"
-              stroke={isWhite ? '#38BDF8' : '#0052CC'}
+              stroke={isWhite ? "#38BDF8" : "#0052CC"}
               strokeWidth="18"
               strokeLinecap="round"
             />
-            <circle cx="174" cy="98" r="22" fill={isWhite ? '#38BDF8' : '#0052CC'} />
+            <circle
+              cx="174"
+              cy="98"
+              r="22"
+              fill={isWhite ? "#38BDF8" : "#0052CC"}
+            />
           </motion.g>
 
           {/* Top Right Antenna (Interactive wiggle on hover) */}
           <motion.g
             animate={activeHover ? { rotate: [0, 4, -3, 0] } : { rotate: 0 }}
-            transition={activeHover ? { duration: 0.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.2 }}
-            style={{ transformOrigin: '284px 148px' }}
+            transition={
+              activeHover
+                ? { duration: 0.8, repeat: Infinity, ease: "easeInOut" }
+                : { duration: 0.2 }
+            }
+            style={{ transformOrigin: "284px 148px" }}
           >
-            <line x1="284" y1="148" x2="337" y2="100" stroke="#00A3FF" strokeWidth="18" strokeLinecap="round" />
+            <line
+              x1="284"
+              y1="148"
+              x2="337"
+              y2="100"
+              stroke="#00A3FF"
+              strokeWidth="18"
+              strokeLinecap="round"
+            />
             <circle cx="338" cy="98" r="22" fill="#00A3FF" />
           </motion.g>
 
@@ -133,14 +178,27 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
             y1="300"
             x2="114"
             y2="354"
-            stroke={isWhite ? '#38BDF8' : '#0052CC'}
+            stroke={isWhite ? "#38BDF8" : "#0052CC"}
             strokeWidth="18"
             strokeLinecap="round"
           />
-          <circle cx="112" cy="356" r="20" fill={isWhite ? '#38BDF8' : '#0052CC'} />
+          <circle
+            cx="112"
+            cy="356"
+            r="20"
+            fill={isWhite ? "#38BDF8" : "#0052CC"}
+          />
 
           {/* Lower Right Stalk & Node */}
-          <line x1="344" y1="300" x2="398" y2="354" stroke="#00A3FF" strokeWidth="18" strokeLinecap="round" />
+          <line
+            x1="344"
+            y1="300"
+            x2="398"
+            y2="354"
+            stroke="#00A3FF"
+            strokeWidth="18"
+            strokeLinecap="round"
+          />
           <circle cx="400" cy="356" r="20" fill="#00A3FF" />
 
           {/* Head: Donut Ring */}
@@ -167,10 +225,10 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
             }
             transition={
               activeHover
-                ? { duration: 0.32, repeat: Infinity, ease: 'easeInOut' }
+                ? { duration: 0.32, repeat: Infinity, ease: "easeInOut" }
                 : { duration: 0.2 }
             }
-            style={{ transformOrigin: '215px 240px' }}
+            style={{ transformOrigin: "215px 240px" }}
           />
 
           {/* Right Wing (Sleek aerodynamic loop with hover flutter) */}
@@ -189,18 +247,45 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
             }
             transition={
               activeHover
-                ? { duration: 0.32, repeat: Infinity, ease: 'easeInOut' }
+                ? { duration: 0.32, repeat: Infinity, ease: "easeInOut" }
                 : { duration: 0.2 }
             }
-            style={{ transformOrigin: '297px 240px' }}
+            style={{ transformOrigin: "297px 240px" }}
           />
 
           {/* Body Segments */}
-          <path d="M 205 270 C 205 242 307 242 307 270 Z" fill={`url(#bzB_${size}_${variant})`} />
-          <rect x="180" y="284" width="152" height="26" rx="13" fill={`url(#bzB_${size}_${variant})`} />
-          <rect x="186" y="324" width="140" height="26" rx="13" fill={`url(#bzB_${size}_${variant})`} />
-          <rect x="198" y="364" width="116" height="26" rx="13" fill={`url(#bzB_${size}_${variant})`} />
-          <path d="M 228 404 L 284 404 L 256 448 Z" fill={`url(#bzB_${size}_${variant})`} />
+          <path
+            d="M 205 270 C 205 242 307 242 307 270 Z"
+            fill={`url(#bzB_${size}_${variant})`}
+          />
+          <rect
+            x="180"
+            y="284"
+            width="152"
+            height="26"
+            rx="13"
+            fill={`url(#bzB_${size}_${variant})`}
+          />
+          <rect
+            x="186"
+            y="324"
+            width="140"
+            height="26"
+            rx="13"
+            fill={`url(#bzB_${size}_${variant})`}
+          />
+          <rect
+            x="198"
+            y="364"
+            width="116"
+            height="26"
+            rx="13"
+            fill={`url(#bzB_${size}_${variant})`}
+          />
+          <path
+            d="M 228 404 L 284 404 L 256 448 Z"
+            fill={`url(#bzB_${size}_${variant})`}
+          />
         </svg>
       </motion.div>
 
@@ -211,7 +296,9 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
             activeHover
               ? {
                   scale: [0.9, 0.6, 1.1, 0.7, 0.9],
-                  opacity: isWhite ? [0.25, 0.5, 0.2, 0.45, 0.25] : [0.15, 0.35, 0.12, 0.3, 0.15],
+                  opacity: isWhite
+                    ? [0.25, 0.5, 0.2, 0.45, 0.25]
+                    : [0.15, 0.35, 0.12, 0.3, 0.15],
                 }
               : {
                   scale: 0,
@@ -220,18 +307,18 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
           }
           transition={
             activeHover
-              ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }
+              ? { duration: 2.2, repeat: Infinity, ease: "easeInOut" }
               : { duration: 0.2 }
           }
           className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-1.5 rounded-full pointer-events-none blur-xs ${
-            isWhite ? 'bg-[#38BDF8]' : 'bg-[#0282EB]'
+            isWhite ? "bg-[#38BDF8]" : "bg-[#0282EB]"
           }`}
         />
       )}
     </div>
   );
 
-  if (variant === 'mark') {
+  if (variant === "mark") {
     return (
       <div
         onMouseEnter={() => setIsSelfHovered(true)}
@@ -253,16 +340,16 @@ export const BeezentLogo: React.FC<BeezentLogoProps> = ({
       <div className="flex flex-col justify-center leading-none">
         <span
           className={`font-black ${currentSize.text} ${currentSize.tracking} uppercase tracking-wider font-sans transition-colors duration-200 ${
-            isWhite ? 'text-white' : 'text-[#111827]'
+            isWhite ? "text-white" : "text-[#111827]"
           }`}
-          style={{ letterSpacing: '0.05em' }}
+          style={{ letterSpacing: "0.05em" }}
         >
           BEEZEN<span className="text-[#0282EB]">TS</span>
         </span>
         {showTagline && (
           <span
             className={`text-[9px] font-semibold tracking-widest uppercase mt-0.5 ${
-              isWhite ? 'text-slate-300' : 'text-[#0282EB]'
+              isWhite ? "text-slate-300" : "text-[#0282EB]"
             }`}
           >
             AI Automation Agency

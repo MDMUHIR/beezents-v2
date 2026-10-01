@@ -1,8 +1,8 @@
-import React from 'react';
-import { motion } from 'motion/react';
-import { ArrowRight, Bot, Cpu, Database, TrendingUp } from 'lucide-react';
-import { useRouter } from '../../../context/RouterContext';
-import { useDatabase } from '../../../context/DatabaseContext';
+import React from "react";
+import { motion } from "motion/react";
+import { ArrowRight, Bot, Cpu, Database, TrendingUp } from "lucide-react";
+import { useRouter } from "../../../context/RouterContext";
+import { useDatabase } from "../../../context/DatabaseContext";
 
 export const ServicesSection: React.FC = () => {
   const { navigate } = useRouter();
@@ -10,13 +10,22 @@ export const ServicesSection: React.FC = () => {
 
   const fallbackServices = [
     {
-      id: 'ai-agents',
-      title: 'AI AGENTS',
+      id: "ai-agents",
+      title: "AI AGENTS",
       description:
-        'Custom AI agents that automate tasks, assist teams, and enhance customer experiences.',
-      href: '/services/ai-agent-development',
+        "Custom AI agents that automate tasks, assist teams, and enhance customer experiences.",
+      href: "/services/ai-agent-development",
       icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0282EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#0282EB"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <circle cx="12" cy="12" r="3" />
           <path d="M12 2v3" />
           <path d="M12 19v3" />
@@ -27,13 +36,22 @@ export const ServicesSection: React.FC = () => {
       ),
     },
     {
-      id: 'ai-automation',
-      title: 'AI AUTOMATION',
+      id: "ai-automation",
+      title: "AI AUTOMATION",
       description:
-        'Streamline workflows and eliminate repetitive tasks with intelligent automation.',
-      href: '/services/ai-automation',
+        "Streamline workflows and eliminate repetitive tasks with intelligent automation.",
+      href: "/services/ai-automation",
       icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0282EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#0282EB"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="3" width="7" height="7" rx="1.5" />
           <rect x="14" y="14" width="7" height="7" rx="1.5" />
@@ -44,13 +62,22 @@ export const ServicesSection: React.FC = () => {
       ),
     },
     {
-      id: 'rag-systems',
-      title: 'RAG SYSTEMS',
+      id: "rag-systems",
+      title: "RAG SYSTEMS",
       description:
-        'Build smart retrieval systems that provide accurate answers from your data.',
-      href: '/services/custom-ai-solutions',
+        "Build smart retrieval systems that provide accurate answers from your data.",
+      href: "/services/custom-ai-solutions",
       icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0282EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#0282EB"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
           <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
           <line x1="12" y1="22.08" x2="12" y2="12" />
@@ -58,13 +85,22 @@ export const ServicesSection: React.FC = () => {
       ),
     },
     {
-      id: 'data-analytics',
-      title: 'DATA & ANALYTICS',
+      id: "data-analytics",
+      title: "DATA & ANALYTICS",
       description:
-        'Turn data into insights and drive decisions with advanced analytics and dashboards.',
-      href: '/services/web-software-development',
+        "Turn data into insights and drive decisions with advanced analytics and dashboards.",
+      href: "/services/web-software-development",
       icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0282EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#0282EB"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M3 3v18h18" />
           <path d="M18 9l-5 5-4-4-6 6" />
           <circle cx="18" cy="9" r="2" fill="#0282EB" />
@@ -74,7 +110,8 @@ export const ServicesSection: React.FC = () => {
   ];
   const cmsServices = getServices();
   const orderedServices = [...cmsServices].sort(
-    (a, b) => Number(b.featured) - Number(a.featured) || a.sortOrder - b.sortOrder
+    (a, b) =>
+      Number(b.featured) - Number(a.featured) || a.sortOrder - b.sortOrder,
   );
   const services = orderedServices.length
     ? orderedServices.slice(0, 4).map((service, index) => ({
@@ -87,9 +124,11 @@ export const ServicesSection: React.FC = () => {
     : fallbackServices;
 
   return (
-    <section id="services" className="py-16 sm:py-20 lg:py-24 bg-slate-100 border-b border-slate-200">
+    <section
+      id="services"
+      className="py-16 sm:py-20 lg:py-24 bg-slate-100 border-b border-slate-200"
+    >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 lg:mb-16">
           <div className="max-w-2xl">
@@ -100,15 +139,16 @@ export const ServicesSection: React.FC = () => {
               AI SOLUTIONS THAT DRIVE REAL RESULTS
             </h2>
             <p className="mt-3 text-base sm:text-lg text-[#1F2937] font-normal leading-relaxed">
-              From intelligent automation to custom AI agents, we deliver solutions that create measurable impact.
+              From intelligent automation to custom AI agents, we deliver
+              solutions that create measurable impact.
             </p>
           </div>
 
           <a
             href="/services"
-            onClick={e => {
+            onClick={(e) => {
               e.preventDefault();
-              navigate('/services');
+              navigate("/services");
             }}
             className="inline-flex items-center gap-1.5 text-sm font-bold text-[#0282EB] hover:text-[#026fc9] group shrink-0"
           >
@@ -128,7 +168,7 @@ export const ServicesSection: React.FC = () => {
               transition={{ duration: 0.4, delay: idx * 0.1 }}
               onClick={() => navigate(item.href)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   navigate(item.href);
                 }
@@ -163,7 +203,6 @@ export const ServicesSection: React.FC = () => {
             </motion.div>
           ))}
         </div>
-
       </div>
     </section>
   );

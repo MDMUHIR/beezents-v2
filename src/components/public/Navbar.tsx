@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { motion, useMotionValue, useSpring, AnimatePresence } from "motion/react";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  AnimatePresence,
+} from "motion/react";
 import { useRouter, Link } from "../../context/RouterContext";
 import { useDatabase } from "../../context/DatabaseContext";
 import { useModals } from "../../context/ModalContext";
@@ -19,15 +24,27 @@ const FALLBACK_SERVICES = [
   { label: "AI Agent Development", href: "/services/ai-agent-development" },
   { label: "AI Automation", href: "/services/ai-automation" },
   { label: "Custom AI Solutions", href: "/services/custom-ai-solutions" },
-  { label: "Web & Software Development", href: "/services/web-software-development" },
+  {
+    label: "Web & Software Development",
+    href: "/services/web-software-development",
+  },
   { label: "AI Integration", href: "/services/ai-integration" },
   { label: "AI Consulting", href: "/services/ai-consulting" },
 ];
 
 const FALLBACK_SOLUTION_CATEGORIES = [
-  { label: "Customer Experience", href: "/solutions/category/customer-experience" },
-  { label: "Revenue Operations", href: "/solutions/category/revenue-operations" },
-  { label: "Internal Operations", href: "/solutions/category/internal-operations" },
+  {
+    label: "Customer Experience",
+    href: "/solutions/category/customer-experience",
+  },
+  {
+    label: "Revenue Operations",
+    href: "/solutions/category/revenue-operations",
+  },
+  {
+    label: "Internal Operations",
+    href: "/solutions/category/internal-operations",
+  },
   { label: "Operations", href: "/solutions/category/operations" },
   { label: "Data & Compliance", href: "/solutions/category/data-compliance" },
 ];
@@ -81,32 +98,37 @@ function MagneticButton({
 
 export const Navbar: React.FC = () => {
   const { path, navigate } = useRouter();
-  const { auth, getSolutionCategories, getServiceCategories, getProjectCategories } = useDatabase();
+  const {
+    auth,
+    getSolutionCategories,
+    getServiceCategories,
+    getProjectCategories,
+  } = useDatabase();
   const { openDemo } = useModals();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const headerRef = React.useRef<HTMLElement>(null);
-const solutionCategories = getSolutionCategories();
+  const solutionCategories = getSolutionCategories();
   const serviceCategories = getServiceCategories();
   const projectCategories = getProjectCategories();
 
   const serviceCatItems = serviceCategories.length
-    ? serviceCategories.map(category => ({
+    ? serviceCategories.map((category) => ({
         label: category.name,
         href: `/services/category/${category.slug}`,
       }))
     : FALLBACK_SERVICES;
 
   const solutionCatItems = solutionCategories.length
-    ? solutionCategories.map(category => ({
+    ? solutionCategories.map((category) => ({
         label: category.name,
         href: `/solutions/category/${category.slug}`,
       }))
     : FALLBACK_SOLUTION_CATEGORIES;
 
   const projectCatItems = projectCategories.length
-    ? projectCategories.map(category => ({
+    ? projectCategories.map((category) => ({
         label: category.name,
         href: `/projects/category/${category.slug}`,
       }))
@@ -146,7 +168,7 @@ const solutionCategories = getSolutionCategories();
     };
   }, []);
 
-const navItems = [
+  const navItems = [
     {
       label: "Services",
       href: "/services",
@@ -216,230 +238,231 @@ const navItems = [
             : "h-16 bg-white/85 backdrop-blur-sm border-b border-transparent"
         }`}
       >
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-        {/* Left: Official Brand Logo with Bee Emblem & BEEZENTS Wordmark */}
-        <Link
-          href="/"
-          className="group focus:outline-hidden"
-          aria-label="Beezent Home"
-        >
-          <BeezentLogo size="md" />
-        </Link>
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
+          {/* Left: Official Brand Logo with Bee Emblem & BEEZENTS Wordmark */}
+          <Link
+            href="/"
+            className="group focus:outline-hidden"
+            aria-label="Beezent Home"
+          >
+            <BeezentLogo size="md" />
+          </Link>
 
-        {/* Center: Desktop Navigation Links matching reference screenshot */}
-        <nav
-          className="hidden lg:flex items-center gap-8 text-sm font-medium h-full"
-          aria-label="Main Navigation"
-        >
-          {navItems.map((item) => {
-            const active = isActive(item.href);
+          {/* Center: Desktop Navigation Links matching reference screenshot */}
+          <nav
+            className="hidden lg:flex items-center gap-8 text-sm font-medium h-full"
+            aria-label="Main Navigation"
+          >
+            {navItems.map((item) => {
+              const active = isActive(item.href);
 
-            if (item.hasDropdown) {
+              if (item.hasDropdown) {
                 const isDropdownOpen = openDropdown === item.label;
 
-              return (
-                <div
-                  key={item.label}
-                  className="relative group h-full flex items-center"
-                >
-                  <a
-                    href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setOpenDropdown(isDropdownOpen ? null : item.label);
-                    }}
-                    aria-haspopup="true"
-                    aria-expanded={isDropdownOpen}
-                    className={`inline-flex items-center gap-1.5 py-1 cursor-pointer transition-colors hover:text-[#0282EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm whitespace-nowrap ${
-                      active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
-                    }`}
+                return (
+                  <div
+                    key={item.label}
+                    className="relative group h-full flex items-center"
                   >
-                    <span>{item.label}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-[#94A3B8] group-hover:text-[#0282EB] transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`} />
-                  </a>
-
-                  {/* Dropdown Menu */}
-                  <AnimatePresence>
-                  {isDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="absolute top-full mt-2 -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl shadow-blue-900/5 border border-slate-100 z-50"
-                    >
-                      <div className="max-h-[70vh] overflow-y-auto overscroll-contain">
-                        {item.subItems?.map((sub) => (
-                          <a
-                            key={sub.href}
-                            href={sub.href}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              navigate(sub.href);
-                              setOpenDropdown(null);
-                            }}
-                            className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
-                          >
-                            {sub.label}
-                          </a>
-                        ))}
-                      </div>
-                      <div className="mt-1 pt-1 border-t border-slate-100 px-3.5 py-1.5">
-                        <a
-                          href={item.href}
-                          onClick={(e) => handleNavClick(e, item.href)}
-                          className="text-[11px] font-semibold text-[#0282EB] hover:underline inline-flex items-center gap-1"
-                        >
-                          <span>Explore all {item.label}</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </a>
-                      </div>
-                    </motion.div>
-                  )}
-                  </AnimatePresence>
-                </div>
-              );
-            }
-
-            return (
-              <div key={item.label} className="relative group/link h-full flex items-center">
-                <a
-                  href={item.href}
-                  onClick={(e) => handleNavClick(e, item.href)}
-                  className={`transition-colors hover:text-[#0282EB] relative py-1 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
-                    active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
-                  }`}
-                >
-                  {item.label}
-                  <span
-                    className={`absolute left-0 -bottom-0.5 h-0.5 bg-[#0282EB] rounded-full transition-all duration-300 ${
-                      active ? "w-full" : "w-0 group-hover/link:w-full"
-                    }`}
-                  />
-                </a>
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Right: Compact CTA button + discreet Admin link */}
-        <div className="hidden sm:flex items-center gap-3">
-          <MagneticButton
-            onClick={openDemo}
-            className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#2B2F38] hover:bg-[#363C48] text-white text-xs font-semibold border border-[#2B2F38] backdrop-blur-md transition-colors cursor-pointer"
-          >
-            <span>Get in touch</span>
-            <PhoneCall className="w-3.5 h-3.5 text-[#38BDF8]" />
-          </MagneticButton>
-        </div>
-
-        {/* Mobile Hamburger Button */}
-        <div className="flex lg:hidden items-center gap-2 h-full">
-          <button
-            onClick={openDemo}
-            className="text-xs font-semibold bg-[#0282EB] text-white px-3.5 py-1.5 rounded-lg flex items-center gap-1 hover:bg-[#0171d0] transition-colors"
-          >
-            <span>Talk</span>
-            <ArrowRight className="w-3 h-3" />
-          </button>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-hidden"
-            aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
-          >
-            {mobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Navigation Drawer */}
-      <AnimatePresence>
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="lg:hidden overflow-hidden border-b border-slate-200 bg-white shadow-xl"
-        >
-          <div className="px-5 pt-3 pb-6 space-y-3">
-          <div className="space-y-1">
-            {navItems.map((item) => (
-              <div key={item.label}>
-                <a
-                  href={item.href}
-                  onClick={(e) => {
-                    if (item.hasDropdown) {
-                      e.preventDefault();
-                      setOpenDropdown(openDropdown === item.label ? null : item.label);
-                    } else {
-                      handleNavClick(e, item.href);
-                      setMobileMenuOpen(false);
-                    }
-                  }}
-                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? "bg-blue-50 text-[#0282EB] font-semibold"
-                      : "text-[#1F2937] hover:bg-slate-50"
-                  }`}
-                >
-                  <span>{item.label}</span>
-                  {item.hasDropdown && <ChevronDown className="w-4 h-4" />}
-                </a>
-{item.hasDropdown && openDropdown === item.label && (
-                  <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
                     <a
                       href={item.href}
                       onClick={(e) => {
                         e.preventDefault();
-                        navigate(item.href);
-                        setMobileMenuOpen(false);
+                        setOpenDropdown(isDropdownOpen ? null : item.label);
                       }}
-                      className="block px-3 py-2 rounded-lg text-xs font-bold text-[#0282EB] hover:bg-blue-50"
+                      aria-haspopup="true"
+                      aria-expanded={isDropdownOpen}
+                      className={`inline-flex items-center gap-1.5 py-1 cursor-pointer transition-colors hover:text-[#0282EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm whitespace-nowrap ${
+                        active
+                          ? "text-[#0282EB] font-semibold"
+                          : "text-[#1F2937]"
+                      }`}
                     >
-                      Explore all {item.label} <span aria-hidden="true">→</span>
+                      <span>{item.label}</span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-[#94A3B8] group-hover:text-[#0282EB] transition-transform duration-200 ${isDropdownOpen ? "rotate-180" : ""}`}
+                      />
                     </a>
-                    {item.subItems?.map(sub => (
-                      <a
-                        key={sub.href}
-                        href={sub.href}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate(sub.href);
-                          setMobileMenuOpen(false);
-                        }}
-                        className="block px-3 py-2 rounded-lg text-xs text-slate-600 hover:bg-blue-50 hover:text-[#0282EB]"
-                      >
-                        {sub.label}
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                openDemo();
-              }}
-              className="w-full flex items-center justify-center gap-2 bg-[#0282EB] text-white text-center font-semibold py-3 rounded-xl shadow-xs cursor-pointer text-sm"
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {isDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="absolute top-full mt-2 -left-4 w-60 bg-white rounded-2xl p-2 shadow-xl shadow-blue-900/5 border border-slate-100 z-50"
+                        >
+                          <div className="max-h-[70vh] overflow-y-auto overscroll-contain">
+                            {item.subItems?.map((sub) => (
+                              <a
+                                key={sub.href}
+                                href={sub.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate(sub.href);
+                                  setOpenDropdown(null);
+                                }}
+                                className="block px-3.5 py-2 rounded-xl text-xs font-medium text-[#1F2937] hover:text-[#0282EB] hover:bg-blue-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB]"
+                              >
+                                {sub.label}
+                              </a>
+                            ))}
+                          </div>
+                          <div className="mt-1 pt-1 border-t border-slate-100 px-3.5 py-1.5">
+                            <a
+                              href={item.href}
+                              onClick={(e) => handleNavClick(e, item.href)}
+                              className="text-[11px] font-semibold text-[#0282EB] hover:underline inline-flex items-center gap-1"
+                            >
+                              <span>Explore all {item.label}</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={item.label}
+                  className="relative group/link h-full flex items-center"
+                >
+                  <a
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.href)}
+                    className={`transition-colors hover:text-[#0282EB] relative py-1 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0282EB] focus-visible:ring-offset-2 rounded-sm ${
+                      active ? "text-[#0282EB] font-semibold" : "text-[#1F2937]"
+                    }`}
+                  >
+                    {item.label}
+                    <span
+                      className={`absolute left-0 -bottom-0.5 h-0.5 bg-[#0282EB] rounded-full transition-all duration-300 ${
+                        active ? "w-full" : "w-0 group-hover/link:w-full"
+                      }`}
+                    />
+                  </a>
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Mobile Hamburger Button */}
+          <div className="flex lg:hidden items-center gap-2 h-full">
+            <MagneticButton
+              onClick={openDemo}
+              className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#2B2F38] hover:bg-[#363C48] text-white text-xs font-semibold border border-[#2B2F38] backdrop-blur-md transition-colors cursor-pointer"
             >
-              <span>Let's Talk</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>Contact</span>
+              <PhoneCall className="w-3.5 h-3.5 text-[#38BDF8]" />
+            </MagneticButton>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-hidden"
+              aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
+            >
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
-      </motion.div>
-      )}
-      </AnimatePresence>
-    </header>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="lg:hidden overflow-hidden border-b border-slate-200 bg-white shadow-xl"
+            >
+              <div className="px-5 pt-3 pb-6 space-y-3">
+                <div className="space-y-1">
+                  {navItems.map((item) => (
+                    <div key={item.label}>
+                      <a
+                        href={item.href}
+                        onClick={(e) => {
+                          if (item.hasDropdown) {
+                            e.preventDefault();
+                            setOpenDropdown(
+                              openDropdown === item.label ? null : item.label,
+                            );
+                          } else {
+                            handleNavClick(e, item.href);
+                            setMobileMenuOpen(false);
+                          }
+                        }}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isActive(item.href)
+                            ? "bg-blue-50 text-[#0282EB] font-semibold"
+                            : "text-[#1F2937] hover:bg-slate-50"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {item.hasDropdown && (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </a>
+                      {item.hasDropdown && openDropdown === item.label && (
+                        <div className="ml-3 border-l border-slate-200 pl-3 py-1 space-y-1">
+                          <a
+                            href={item.href}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              navigate(item.href);
+                              setMobileMenuOpen(false);
+                            }}
+                            className="block px-3 py-2 rounded-lg text-xs font-bold text-[#0282EB] hover:bg-blue-50"
+                          >
+                            Explore all {item.label}{" "}
+                            <span aria-hidden="true">→</span>
+                          </a>
+                          {item.subItems?.map((sub) => (
+                            <a
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigate(sub.href);
+                                setMobileMenuOpen(false);
+                              }}
+                              className="block px-3 py-2 rounded-lg text-xs text-slate-600 hover:bg-blue-50 hover:text-[#0282EB]"
+                            >
+                              {sub.label}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      openDemo();
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-[#0282EB] text-white text-center font-semibold py-3 rounded-xl shadow-xs cursor-pointer text-sm"
+                  >
+                    <span>Let's Talk</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
       <div aria-hidden="true" className="h-16" />
     </>
   );
